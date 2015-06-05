@@ -1,0 +1,28 @@
+﻿{
+    "BaseUrl": "http://mydomain.com",
+    "WebApiAssembly": "C:\\GitProjects\\\\MyDomain\\MyProject\\src\\MyDomain.Web.Api\\bin\\MyDomain.Web.Api.dll",
+    "WebApiConfig": "C:\\GitProjects\\MyDomain\\MyProject\\src\\MyDomain.Web.Api\\web.config",
+    "ProxyOutputFile": "C:\\GitProjects\\MyDomain\\MyProject\\src\\MyDomain.Web.Api.Proxy\\SwaggerProxy.cs",
+    "EndPoints": [
+        {
+            "Id": "MyDomainCoreWebProxy",
+            "Url": "http://mydomain.com/swagger/docs/core",
+            "Namespace": "MyDomain.Core.WebProxy",
+            "Suffix": "WebProxy",
+            "BaseProxyClass": "Birch.Swagger.ProxyGenerator.BaseProxy",
+            "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
+            "ParseOperationIdForProxyName": "true",
+            "AppendAsyncToMethodName": "true"
+        },
+        {
+            "Id": "MyDomainCoreWebProxy-v2",
+            "Url": "http://mydomain.com/swagger/docs/core-v2",
+            "Namespace": "MyDomain.Core.v2.WebProxy",
+            "Suffix": "WebProxy",
+            "BaseProxyClass": "Birch.Swagger.ProxyGenerator.BaseProxy",
+            "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
+            "ParseOperationIdForProxyName": "true",
+            "AppendAsyncToMethodName": "true"
+        }
+    ]
+}
