@@ -77,7 +77,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
             PrintHeaders();
-            foreach (var swaggerDocDictionaryEntry in SwaggerDocDictionaryList.OrderBy(x => x.Key))
+            foreach (var swaggerDocDictionaryEntry in SwaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
                 var endPoint = swaggerDocDictionaryEntry.Key;
                 Console.WriteLine("Processing {0}", endPoint.Url);
