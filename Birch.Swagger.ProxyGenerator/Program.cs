@@ -17,6 +17,8 @@ namespace Birch.Swagger.ProxyGenerator
     {
         static int Main(string[] args)
         {
+            Console.WriteLine("Birch.Swagger.ProxyGenerator Started...");
+            Console.WriteLine();
             Stopwatch appStopwatch = new Stopwatch();
             appStopwatch.Start();
             try
@@ -27,7 +29,10 @@ namespace Birch.Swagger.ProxyGenerator
                 var assemblyFile = string.Empty;
                 var proxyOutputFile = string.Empty;
                 var baseUrl = string.Empty;
+                // base directory is exe directory unless switch override
+                string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty);
 
+                // check for switch values
                 if (args.Any())
                 {
                     for (int i = 0; i < args.Count(); i++)
@@ -49,47 +54,68 @@ namespace Birch.Swagger.ProxyGenerator
                             case "-baseurl":
                                 baseUrl = args[i + 1];
                                 break;
+                            case "-basedirectory":
+                                baseDirectory = args[i + 1];
+                                break;
                         }
                     }
                 }
 
-                try
+                // Load Proxy Generator Settings
+                Console.WriteLine("Loading settings... \n{0}", settingsFile);
+                Console.WriteLine("Base Path: {0}", baseDirectory);
+
+                var combine = Path.Combine(baseDirectory, "Birch.Swagger.ProxyGenerator.config.json");
+                if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
                 {
-                    string exeDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty);
-                    var combine = Path.Combine(exeDirectory, "Birch.Swagger.ProxyGenerator.config.json");
-                    if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
-                    {
-                        settingsFile = combine;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory.");
+                    settingsFile = combine;
                 }
 
                 if (string.IsNullOrWhiteSpace(settingsFile))
                 {
-                    Console.WriteLine("Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory.");
-                    Console.WriteLine("No path to the Swagger.WebApiProxy.Generator config file provided. Exiting.");
+                    Console.WriteLine("Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
+                        + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
+                    Console.WriteLine();
+                    Console.WriteLine("Exiting Proxy Generator.");
                     return 1;
                 }
 
-                Console.WriteLine("Loading settings... \n{0}", settingsFile);
-                Console.WriteLine();
                 var settings = Generator.ProxyGenerator.GetSettings(settingsFile);
                 var endpoints = settings.EndPoints;
 
+                // only pull value from config file if not set by switch
                 appConfigFile = string.IsNullOrWhiteSpace(appConfigFile) ? settings.WebApiConfig : appConfigFile;
                 assemblyFile = string.IsNullOrWhiteSpace(assemblyFile) ? settings.WebApiAssembly : assemblyFile;
                 proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile) ? settings.ProxyOutputFile : proxyOutputFile;
                 baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? settings.BaseUrl : baseUrl;
 
+                // allow relative paths
+                appConfigFile = Path.IsPathRooted(appConfigFile) ? appConfigFile : Path.GetFullPath(Path.Combine(baseDirectory, appConfigFile));
+                assemblyFile = Path.IsPathRooted(assemblyFile) ? assemblyFile : Path.GetFullPath(Path.Combine(baseDirectory, assemblyFile));
+                proxyOutputFile = Path.IsPathRooted(proxyOutputFile) ? proxyOutputFile : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
+
+                // nothing to process..
                 if (string.IsNullOrWhiteSpace(assemblyFile) && string.IsNullOrWhiteSpace(baseUrl))
                 {
-                    Console.WriteLine("No baseUrl or path to the WebApi assembly file provided. Exiting.");
+                    Console.WriteLine("No baseUrl or path to the WebApi assembly file provided, nothing to process.");
+                    Console.WriteLine();
+                    Console.WriteLine("Exiting Proxy Generator.");
                     return 1;
                 }
 
+
+                // print settings
+                Console.WriteLine("Mode: {0}", string.IsNullOrWhiteSpace(assemblyFile) ? "BaseUrl" : "In Memory");
+                Console.WriteLine("Output: {0}", proxyOutputFile);
+                if (!string.IsNullOrWhiteSpace(assemblyFile))
+                {
+                    Console.WriteLine("Assembly: {0}", assemblyFile);
+                    Console.WriteLine("App Config: {0}", appConfigFile);
+                }
+
+                Console.WriteLine();
+
+                // Run generator against provided assmbly file or baseUrl
                 if (!string.IsNullOrWhiteSpace(assemblyFile))
                 {
                     var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints);
@@ -103,11 +129,13 @@ namespace Birch.Swagger.ProxyGenerator
                     Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl);
                 }
 
+                // All done
                 Console.WriteLine();
                 Console.WriteLine();
                 Console.WriteLine("----------------------------------------------------");
                 Console.WriteLine("Proxy generation completed....");
                 Console.WriteLine("Time Taken: {0}", appStopwatch.Elapsed.ToString());
+                Console.WriteLine();
                 return 0;
             }
             catch (Exception ex)

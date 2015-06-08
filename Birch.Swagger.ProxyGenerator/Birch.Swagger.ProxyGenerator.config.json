@@ -1,8 +1,8 @@
-﻿{
+﻿    {
     "BaseUrl": "http://mydomain.com",
-    "WebApiAssembly": "C:\\GitProjects\\\\MyDomain\\MyProject\\src\\MyDomain.Web.Api\\bin\\MyDomain.Web.Api.dll",
-    "WebApiConfig": "C:\\GitProjects\\MyDomain\\MyProject\\src\\MyDomain.Web.Api\\web.config",
-    "ProxyOutputFile": "C:\\GitProjects\\MyDomain\\MyProject\\src\\MyDomain.Web.Api.Proxy\\SwaggerProxy.cs",
+    "WebApiAssembly": "bin\\MyDomain.Web.Api.dll",
+    "WebApiConfig": "bin\\web.config",
+    "ProxyOutputFile": "SwaggerProxy.cs",
     "EndPoints": [
         {
             "Id": "MyDomainCoreWebProxy",

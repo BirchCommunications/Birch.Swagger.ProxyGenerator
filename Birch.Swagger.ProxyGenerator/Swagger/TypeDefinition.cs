@@ -1,4 +1,6 @@
-﻿namespace Birch.Swagger.ProxyGenerator.Swagger
+﻿using System;
+
+namespace Birch.Swagger.ProxyGenerator.Swagger
 {
     public class TypeDefinition
     {
@@ -17,6 +19,14 @@
 
         public string GetCleanTypeName()
         {
+            while (Name.Contains("-"))
+            {
+                int index = Name.IndexOf("-", StringComparison.InvariantCulture);
+                var letter = Name[index + 1].ToString().ToUpper();
+                Name = Name.Remove(index, 2);
+                Name = Name.Insert(index, letter);
+
+            }
             return Name.Replace("$", "");
         }
     }

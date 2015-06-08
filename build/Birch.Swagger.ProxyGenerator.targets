@@ -1,0 +1,8 @@
+<Project InitialTargets="BeforeBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="BeforeBuild" >
+    <PropertyGroup>
+      <ProxyGeneratorExecutable>$(solutionDir)packages\Birch.Swagger.ProxyGenerator.$version$\tools\ProxyGenerator\Birch.Swagger.ProxyGenerator.exe</ProxyGeneratorExecutable>
+    </PropertyGroup>
+    <Exec Command='"$(ProxyGeneratorExecutable)" -BaseDirectory "$(projectDir)\"' />
+  </Target>
+</Project>
