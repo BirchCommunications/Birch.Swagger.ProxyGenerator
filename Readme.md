@@ -1,6 +1,6 @@
 Birch.Swagger.ProxyGenerator
 ===================================
-This application will consume a swagger 2.0 spec and output a C# proxy that can be used to consume the swagger based service.
+This package will consume a swagger 2.0 spec and output a C# proxy that can be used to consume the swagger based service.
 Most generators only allow you to point at a swagger.json file on disk or hosted on the web.  With the Birch.Swagger.ProxyGenerator you can specify a BaseUrl or an Owin Web API Assembly to generate the proxy from.
 
 Note: If you specify an assembly BaseUrl will be ignored.
