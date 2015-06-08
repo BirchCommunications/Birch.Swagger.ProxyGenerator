@@ -5,7 +5,7 @@
     <id>Birch.Swagger.ProxyGenerator</id>
     <version>$version$</version>
     <title>Birch.Swagger.ProxyGenerator</title>
-    <description>FTP / SFTP client</description>
+    <description>Will consume a swagger 2.0 spec and output a C# proxy that can be used to consume the swagger based service</description>
     <authors>Birch</authors>
     <owners>Birch</owners>
     <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
