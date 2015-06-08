@@ -119,6 +119,17 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteLine();
                     List<Enum> proxyParamEnums = new List<Enum>();
 
+                    WriteLine(@"// helper function for building uris.");
+                    WriteLine(@"private string AppendQuery(string currentUrl, string paramName, string value)");
+                    WriteLine(@"{");
+                    WriteLine(@"if (currentUrl.Contains(""?""))");
+                    WriteLine(@"currentUrl += string.Format(""&{0}={1}"", paramName, Uri.EscapeUriString(value));");
+                    WriteLine(@"else");
+                    WriteLine(@"currentUrl += string.Format(""?{0}={1}"", paramName, Uri.EscapeUriString(value));");
+                    WriteLine(@"return currentUrl;");
+                    WriteLine(@"}");
+                    WriteLine();
+
                     // Async operations (web methods)
                     foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy)))
                     {
@@ -210,7 +221,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", string.Join(\",\", {1}));",
+                                                "url = AppendQuery(url, \"{0}\", string.Join(\",\", {1}));",
                                                 parameter.Type.Name,
                                                 parameter.Type.GetCleanTypeName()));
                                     }
@@ -218,7 +229,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", string.Join(\" \", {1}));",
+                                                "url = AppendQuery(url, \"{0}\", string.Join(\" \", {1}));",
                                                 parameter.Type.Name,
                                                 parameter.Type.GetCleanTypeName()));
                                     }
@@ -226,7 +237,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
+                                                "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
                                                 parameter.Type.Name,
                                                 parameter.Type.GetCleanTypeName()));
                                     }
@@ -234,7 +245,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
+                                                "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
                                                 parameter.Type.Name,
                                                 parameter.Type.GetCleanTypeName()));
                                     }
@@ -244,7 +255,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                         WriteLine("{");
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", item.ToString());",
+                                                "url = AppendQuery(url, \"{0}\", item.ToString());",
                                                 parameter.Type.Name));
                                         WriteLine("}");
                                     }
@@ -253,7 +264,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                         //Warning("unknown collection format found");
                                         WriteLine(
                                             string.Format(
-                                                "url = QueryHelpers.AppendQuery(url, \"{0}\", {1}.ToString());",
+                                                "url = AppendQuery(url, \"{0}\", {1}.ToString());",
                                                 parameter.Type.Name,
                                                 parameter.Type.GetCleanTypeName()));
                                     }
@@ -262,7 +273,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 {
                                     WriteLine(
                                         string.Format(
-                                            "url = QueryHelpers.AppendQuery(url, \"{0}\", {1}.ToString());",
+                                            "url = AppendQuery(url, \"{0}\", {1}.ToString());",
                                             parameter.Type.Name,
                                             parameter.Type.GetCleanTypeName()));
                                 }
@@ -439,10 +450,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteLine("{");
                     foreach (var prop in classDef.Properties)
                     {
-                        WriteLine(string.Format("public {0} {1} {{ get; set; }}", prop.TypeName, prop.Name));
+                        var typeName = string.IsNullOrWhiteSpace(prop.TypeName) ? "object" : prop.TypeName;
+                        WriteLine(string.Format("public {0} {1} {{ get; set; }}", typeName, prop.Name));
                         if (prop.EnumValues != null)
                         {
-                            modelEnums.Add(new Enum() { Name = prop.TypeName, Values = prop.EnumValues });
+                            modelEnums.Add(new Enum() { Name = typeName, Values = prop.EnumValues });
                         }
                     }
 
@@ -526,21 +538,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine();
             WriteLine("// ReSharper disable All");
             WriteLine();
-
-            WriteLine(@"namespace Birch.Swagger.ProxyGenerator {");
-            WriteLine(@"public static class QueryHelpers {");
-            WriteLine(@"// helper function for building uris.");
-            WriteLine(@"private string AppendQuery(string currentUrl, string paramName, string value)");
-            WriteLine(@"{");
-            WriteLine(@"if (currentUrl.Contains(""?""))");
-            WriteLine(@"currentUrl += string.Format(""&{0}={1}"", paramName, Uri.EscapeUriString(value));");
-            WriteLine(@"else");
-            WriteLine(@"currentUrl += string.Format(""?{0}={1}"", paramName, Uri.EscapeUriString(value));");
-            WriteLine(@"return currentUrl;");
-            WriteLine(@"}");
-            WriteLine(@"}");
-            WriteLine(@"}");
-            WriteLine();
         }
 
         static void WriteNullIfStatementOpening(string parameterName, string typeName)
@@ -588,7 +585,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteLine(string text)
         {
-            if (text == "}")
+            if (text == "}" && TextPadding != 0)
             {
                 TextPadding--;
             }
