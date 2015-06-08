@@ -15,7 +15,7 @@ General Setup
 -----------------------------------
 * Create a new project in your solution. For example: MyDomain.MyServiceName.Proxy
 * Install the Birch.Swagger.ProxyGenerator nuget package
-* Modify the example `Birch.Swagger.ProxyGenerator.config.json` (added to the project in the ProxyGenerator folder) to fit your requirements.
+* Modify the example `Birch.Swagger.ProxyGenerator.config.json` (added to the project) to fit your requirements.
 * A BeforeBuild task will be auto registered to generate the proxy code before build.
 * Optional: Set this project to not build.  Generating the proxy will take some time depending on the number of endpoints and the power of your machine, it is recomended to only build the proxy when changes have been made to the source API.
 
