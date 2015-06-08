@@ -5,6 +5,12 @@ Most generators only allow you to point at a swagger.json file on disk or hosted
 
 Note: If you specify an assembly BaseUrl will be ignored.
 
+
+NuGet
+-----------------------------------
+https://www.nuget.org/packages/Birch.Swagger.ProxyGenerator/
+
+
 General Setup
 -----------------------------------
 * Create a new project in your solution. For example: MyDomain.MyServiceName.Proxy
