@@ -30,6 +30,7 @@ All you have to do to generate the proxy is build the project.
 Advanced Usage
 -----------------------------------
 `Birch.Swagger.ProxyGenerator.exe` will look for its configuration file `Birch.Swagger.ProxyGenerator.config.json` in the folder it is executed in, you can override this behavior by providing command line switch `-SettingsFile <path to file>`.
+Setting the `-BaseDirectory` switch will also override this behavior.  Setting the BaseDirectory will cause all relative paths to be resolved from the specified BaseDirectory.
 
 Once you have specified a settings file, you can override specific settings by using its corresponding commandline switch.
 *Available Switches:*
