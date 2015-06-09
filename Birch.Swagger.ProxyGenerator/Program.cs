@@ -30,7 +30,8 @@ namespace Birch.Swagger.ProxyGenerator
                 var proxyOutputFile = string.Empty;
                 var baseUrl = string.Empty;
                 // base directory is exe directory unless switch override
-                string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase).Replace(@"file:\", string.Empty);
+                string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
+                    .Replace(@"file:\", string.Empty);
 
                 // check for switch values
                 if (args.Any())
@@ -73,7 +74,8 @@ namespace Birch.Swagger.ProxyGenerator
 
                 if (string.IsNullOrWhiteSpace(settingsFile))
                 {
-                    Console.WriteLine("Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
+                    Console.WriteLine(
+                        "Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
                         + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
                     Console.WriteLine();
                     Console.WriteLine("Exiting Proxy Generator.");
@@ -86,13 +88,21 @@ namespace Birch.Swagger.ProxyGenerator
                 // only pull value from config file if not set by switch
                 appConfigFile = string.IsNullOrWhiteSpace(appConfigFile) ? settings.WebApiConfig : appConfigFile;
                 assemblyFile = string.IsNullOrWhiteSpace(assemblyFile) ? settings.WebApiAssembly : assemblyFile;
-                proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile) ? settings.ProxyOutputFile : proxyOutputFile;
+                proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile)
+                                      ? settings.ProxyOutputFile
+                                      : proxyOutputFile;
                 baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? settings.BaseUrl : baseUrl;
 
                 // allow relative paths
-                appConfigFile = Path.IsPathRooted(appConfigFile) ? appConfigFile : Path.GetFullPath(Path.Combine(baseDirectory, appConfigFile));
-                assemblyFile = Path.IsPathRooted(assemblyFile) ? assemblyFile : Path.GetFullPath(Path.Combine(baseDirectory, assemblyFile));
-                proxyOutputFile = Path.IsPathRooted(proxyOutputFile) ? proxyOutputFile : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
+                appConfigFile = Path.IsPathRooted(appConfigFile)
+                                    ? appConfigFile
+                                    : Path.GetFullPath(Path.Combine(baseDirectory, appConfigFile));
+                assemblyFile = Path.IsPathRooted(assemblyFile)
+                                   ? assemblyFile
+                                   : Path.GetFullPath(Path.Combine(baseDirectory, assemblyFile));
+                proxyOutputFile = Path.IsPathRooted(proxyOutputFile)
+                                      ? proxyOutputFile
+                                      : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
 
                 // nothing to process..
                 if (string.IsNullOrWhiteSpace(assemblyFile) && string.IsNullOrWhiteSpace(baseUrl))
@@ -138,10 +148,24 @@ namespace Birch.Swagger.ProxyGenerator
                 Console.WriteLine();
                 return 0;
             }
+            catch (AggregateException aex)
+            {
+                foreach (Exception ex in aex.InnerExceptions)
+                {
+                    Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType().ToString());
+                    Console.WriteLine("StackTrace: {0}", ex.StackTrace);
+                    Console.WriteLine();
+                }
+
+                Console.WriteLine("Exiting Proxy Generator.");
+                return 1;
+            }
             catch (Exception ex)
             {
-                Console.WriteLine("An exception has occured: {0}", ex.Message);
+                Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType().ToString());
                 Console.WriteLine("StackTrace: {0}", ex.StackTrace);
+                Console.WriteLine();
+                Console.WriteLine("Exiting Proxy Generator.");
                 return 1;
             }
         }
