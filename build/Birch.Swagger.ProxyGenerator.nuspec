@@ -24,6 +24,7 @@
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\BaseProxy.cs" target="content" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\SwaggerProxy.cs" target="content" />
     <file src="Birch.Swagger.ProxyGenerator.targets" target="build" />
+    <file src="Birch.Swagger.ProxyGenerator.props" target="content/build" />
     <file src="install.ps1" target="tools" />
   </files>
 </package>

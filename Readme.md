@@ -39,3 +39,9 @@ Once you have specified a settings file, you can override specific settings by u
 `-WebApiAssembly <path to file>`
 `-WebApiConfig <path to file>`
 `-ProxyOutputFile <path to file>`
+
+
+Build Server Support
+-----------------------------------
+In order to build on a build server you need to set the PropsFile msbuild property.
+TeamCity Example: `/p:PropsFile="src/ProxyProject/build/Birch.Swagger.ProxyGenerator.props"`
