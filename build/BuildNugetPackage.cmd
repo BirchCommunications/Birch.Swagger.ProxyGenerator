@@ -1,3 +1,10 @@
+:: arguments
+if "%~1"=="" (
+  set version="1.0.0"
+) else (
+  set version=%1
+)
+
 :: Jump up a directory
 cd ..
 
@@ -12,7 +19,7 @@ erase *.nupkg
 
 :: pack everything in build folder
 for /f %%l in ('dir /b *.nuspec') do (
-    nuget pack %%l -version 1.0.0
+    nuget pack %%l -version %version%
 )
 
 echo --------------------------------------------------------

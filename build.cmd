@@ -20,12 +20,12 @@ IF NOT EXIST %MSBUILDDIR%msbuild.exe goto MissingMSBuildExe
 echo %MSBUILDDIR%
 
 :: restore packages for all sln files
-for /f %%l in ('dir /b *.sln') do (    
-    "%CD%/build/nuget.exe" restore  %%l
+for /f %%l in ('dir /b *.sln') do (
+    nuget restore  %%l
 )
 
 :: build all sln files in the root folder
-for /f %%l in ('dir /b *.sln') do (    
+for /f %%l in ('dir /b *.sln') do (
     "%MSBUILDDIR%msbuild.exe"  %%l /m /p:Configuration=Release
 )
 
