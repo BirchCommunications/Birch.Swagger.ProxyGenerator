@@ -44,4 +44,7 @@ Once you have specified a settings file, you can override specific settings by u
 Build Server Support
 -----------------------------------
 In order to build on a build server you need to set the PropsFile msbuild property.
-TeamCity Example: `/p:PropsFile="src/ProxyProject/build/Birch.Swagger.ProxyGenerator.props"`
+
+Note: If you supply a PropsFile the path will be relative to the project.
+
+TeamCity Example: `/p:PropsFile="build/Birch.Swagger.ProxyGenerator.props"`
