@@ -484,6 +484,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         private static async Task GetEndpointSwaggerDoc(TestServer testServer, SwaggerApiProxySettingsEndPoint endPoint)
         {
             var swaggerString = await testServer.HttpClient.GetStringAsync(endPoint.Url);
+            if (swaggerString == null)
+            {
+                throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
+            }
             Console.WriteLine("Downloaded: {0}", endPoint.Url);
             SwaggerDocDictionaryList.Add(endPoint, swaggerString);
         }
@@ -493,6 +497,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             using (var httpClient = new HttpClient())
             {
                 var swaggerString = await httpClient.GetStringAsync(requestUri);
+                if (swaggerString == null)
+                {
+                    throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
+                }
                 Console.WriteLine("Downloaded: {0}", requestUri);
                 SwaggerDocDictionaryList.Add(endPoint, swaggerString);
             }
