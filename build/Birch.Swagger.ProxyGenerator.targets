@@ -1,6 +1,6 @@
 <Project InitialTargets="BeforeBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PropsFile />
+    <PropsFile>build\Birch.Swagger.ProxyGenerator.props</PropsFile>
     <ProxyGeneratorVersion>$version$</ProxyGeneratorVersion>
   </PropertyGroup>
   <Import Project="$(projectDir)$(PropsFile)" Condition="'$(PropsFile)' != ''" />
