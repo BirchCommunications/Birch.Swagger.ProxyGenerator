@@ -368,6 +368,11 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 }
             }
 
+            if (type.Value.Equals("object"))
+            {
+                isNullable = false;
+                return "object";
+            }
 
 
             isNullable = false;
