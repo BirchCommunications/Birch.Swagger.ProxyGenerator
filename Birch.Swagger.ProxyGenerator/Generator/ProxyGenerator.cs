@@ -97,24 +97,74 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                 WriteLine(string.Format("namespace {0} {{", endPoint.Namespace));
 
-                var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct();
+                var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
+                foreach (var proxy in proxies)
+                {
+                    WriteLine(
+                            string.Format(
+                                "public interface {0}",
+                                string.Format("I{0}WebProxy", SwaggerParser.FixTypeName(proxy)),
+                                endPoint.BaseProxyClass));
+                    WriteLine("{");
+                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy)))
+                    {
+                        string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
+                            ? string.Empty
+                            : string.Format("<{0}>", operationDef.ReturnType);
+                        var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
+                        if (enums != null)
+                        {
+                            List<Enum> proxyParamEnums = new List<Enum>();
+                            foreach (var enumParam in enums)
+                            {
+                                enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
+                                proxyParamEnums.Add(
+                                    new Enum() {Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues});
+                            }
+                        }
+
+                        string parameters = string.Join(
+                            ", ",
+                            operationDef.Parameters.OrderByDescending(i => i.IsRequired)
+                                .Select(
+                                    x =>
+                                        (x.IsRequired == false)
+                                            ? string.Format(
+                                                "{0} {1} = {2}",
+                                                GetDefaultType(x),
+                                                x.Type.GetCleanTypeName(),
+                                                GetDefaultValue(x))
+                                            : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName())));
+
+                        
+                        WriteLine(
+                            string.Format(
+                                "Task{0} {1}{2}({3});",
+                                returnType,
+                                SwaggerParser.FixTypeName(operationDef.OperationId),
+                                methodNameAppend,
+                                parameters));
+                    }
+                    WriteLine("}");
+                }
                 foreach (var proxy in proxies)
                 {
                     // start class defintion
                     WriteLine("/// <summary>");
                     WriteLine(string.Format("/// Web Proxy for {0}", proxy));
                     WriteLine("/// </summary>");
+                    var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
                     WriteLine(
                         string.Format(
-                            "public class {0} : {1}",
-                            SwaggerParser.FixTypeName(proxy) + "WebProxy",
+                            "public class {0} : {1}, I{0}",
+                            className,
                             endPoint.BaseProxyClass));
                     WriteLine("{");
 
                     WriteLine(
                         string.Format(
                             "public {0}{1}",
-                            SwaggerParser.FixTypeName(proxy) + "WebProxy",
+                            className,
                             endPoint.ProxyConstructorSuffix));
                     WriteLine("{}");
                     WriteLine();
@@ -183,7 +233,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                         WriteLine(
                             string.Format(
-                                "public async Task{0} {1}{2} ({3})",
+                                "public async Task{0} {1}{2}({3})",
                                 returnType,
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
