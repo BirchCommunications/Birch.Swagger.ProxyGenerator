@@ -23,12 +23,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static int TextPadding { get; set; }
 
-        private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> SwaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
+        private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
 
         public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl)
         {
             // init
-            SwaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
+            _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
             FileText = new StringBuilder();
 
             Console.WriteLine();
@@ -54,7 +54,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer)
         {
             // init
-            SwaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
+            _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
             FileText = new StringBuilder();
 
             Console.WriteLine();
@@ -78,20 +78,19 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
             PrintHeaders();
-            foreach (var swaggerDocDictionaryEntry in SwaggerDocDictionaryList.OrderBy(x => x.Key.Id))
+            foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
                 var endPoint = swaggerDocDictionaryEntry.Key;
                 Console.WriteLine("Processing {0}", endPoint.Url);
                 WriteLine(string.Format("// {0} Proxy", endPoint.Url));
 
-                string result;
                 string methodNameAppend = string.Empty;
                 if (endPoint.AppendAsyncToMethodName)
                 {
                     methodNameAppend = "Async";
                 }
 
-                result = swaggerDocDictionaryEntry.Value;
+                var result = swaggerDocDictionaryEntry.Value;
                 var parser = new SwaggerParser();
                 var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
 
@@ -103,40 +102,44 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteLine(
                             string.Format(
                                 "public interface {0}",
-                                string.Format("I{0}WebProxy", SwaggerParser.FixTypeName(proxy)),
-                                endPoint.BaseProxyClass));
+                                string.Format("I{0}WebProxy", SwaggerParser.FixTypeName(proxy))));
                     WriteLine("{");
-                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy)))
+                    var proxy1 = proxy;
+                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy1)))
                     {
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                             ? string.Empty
                             : string.Format("<{0}>", operationDef.ReturnType);
                         var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
-                        if (enums != null)
+
+                        List<Enum> proxyParamEnums = new List<Enum>();
+                        foreach (var enumParam in enums)
                         {
-                            List<Enum> proxyParamEnums = new List<Enum>();
-                            foreach (var enumParam in enums)
-                            {
-                                enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
-                                proxyParamEnums.Add(
-                                    new Enum() {Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues});
-                            }
+                            enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
+                            proxyParamEnums.Add(
+                                new Enum() { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
                         }
 
+                        var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
                         string parameters = string.Join(
                             ", ",
                             operationDef.Parameters.OrderByDescending(i => i.IsRequired)
                                 .Select(
                                     x =>
-                                        (x.IsRequired == false)
+                                    {
+                                        // if parameter is enum include the namespace
+                                        string parameter = x.Type.EnumValues != null ? string.Format("{0}.{1}.", endPoint.Namespace, className) : string.Empty;
+                                        parameter += x.IsRequired == false
                                             ? string.Format(
                                                 "{0} {1} = {2}",
                                                 GetDefaultType(x),
                                                 x.Type.GetCleanTypeName(),
                                                 GetDefaultValue(x))
-                                            : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName())));
+                                            : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName());
+                                        return parameter;
+                                    }));
 
-                        
+
                         WriteLine(
                             string.Format(
                                 "Task{0} {1}{2}({3});",
@@ -182,20 +185,19 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteLine();
 
                     // Async operations (web methods)
-                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy)))
+                    var proxy1 = proxy;
+                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy1)))
                     {
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                                                 ? string.Empty
                                                 : string.Format("<{0}>", operationDef.ReturnType);
                         var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
-                        if (enums != null)
+
+                        foreach (var enumParam in enums)
                         {
-                            foreach (var enumParam in enums)
-                            {
-                                enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
-                                proxyParamEnums.Add(
-                                    new Enum() { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
-                            }
+                            enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
+                            proxyParamEnums.Add(
+                                new Enum() { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
                         }
 
                         string parameters = string.Join(
@@ -387,7 +389,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                                 formParam.Type.Name));
                                         WriteLine(
                                             string.Format(
-                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") { FileName = \"{0}.Item2\" };",
+                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item2\" }};",
                                                 formParam.Type.Name));
                                     }
                                     WriteLine("HttpContent content = new FormUrlEncodedContent(formKeyValuePairs);");
@@ -451,9 +453,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                         "var response = await client.PostAsync(url, new StringContent(string.Empty)).ConfigureAwait(false);");
                                 }
 
-                                break;
-
-                            default:
                                 break;
                         }
                         WriteLine("await EnsureSuccessStatusCodeAsync(response);");
@@ -540,7 +539,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
             }
             Console.WriteLine("Downloaded: {0}", endPoint.Url);
-            SwaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
+            _swaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
         }
 
         private static async Task GetEndpointSwaggerDoc(string requestUri, SwaggerApiProxySettingsEndPoint endPoint)
@@ -553,7 +552,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
                 }
                 Console.WriteLine("Downloaded: {0}", requestUri);
-                SwaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
+                _swaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
             }
         }
 
