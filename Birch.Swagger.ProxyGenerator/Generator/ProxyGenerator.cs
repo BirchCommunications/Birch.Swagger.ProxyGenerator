@@ -131,10 +131,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                         string parameter = x.Type.EnumValues != null ? string.Format("{0}.{1}.", endPoint.Namespace, className) : string.Empty;
                                         parameter += x.IsRequired == false
                                             ? string.Format(
-                                                "{0} {1} = {2}",
+                                                "{0} {1} = {3}{2}",
                                                 GetDefaultType(x),
                                                 x.Type.GetCleanTypeName(),
-                                                GetDefaultValue(x))
+                                                GetDefaultValue(x),
+                                                parameter)
                                             : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName());
                                         return parameter;
                                     }));
@@ -589,9 +590,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("using System.Collections.Generic;");
             WriteLine("using System.Threading.Tasks;");
             WriteLine("using System.Net.Http;");
-            WriteLine();
-            WriteLine("using Birch.Swagger.ProxyGenerator;");
-            //WriteLine("using System.Net.Http.Headers;");
             WriteLine();
             WriteLine("// ReSharper disable All");
             WriteLine();
