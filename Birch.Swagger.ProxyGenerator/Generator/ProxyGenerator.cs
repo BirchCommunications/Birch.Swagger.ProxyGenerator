@@ -259,11 +259,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine(";");
 
                         var queryParams = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Query).ToList();
-                        if (queryParams != null && queryParams.Count > 0)
+                        if (queryParams.Count > 0)
                         {
                             foreach (var parameter in queryParams)
                             {
-                                if (parameter.IsRequired == false)
+                                if (parameter.IsRequired == false && (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
                                 {
                                     WriteNullIfStatementOpening(parameter.Type.GetCleanTypeName(), parameter.Type.TypeName);
                                 }
@@ -332,7 +332,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                             parameter.Type.GetCleanTypeName()));
                                 }
 
-                                if (parameter.IsRequired == false)
+                                if (parameter.IsRequired == false && (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
                                 {
                                     WriteLine("}");
                                 }
