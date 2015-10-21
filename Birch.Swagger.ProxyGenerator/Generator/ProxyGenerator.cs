@@ -25,7 +25,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl, bool angularProxy)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -47,11 +47,14 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile);
-
+            ProcessSwaggerDocumentsCSharp(proxyOutputFile);
+            if (angularProxy)
+            {
+                ProcessSwaggerDocumentsAngular(proxyOutputFile);
+            }
         }
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer, bool angularProxy)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -70,10 +73,14 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile);
+            ProcessSwaggerDocumentsCSharp(proxyOutputFile);
+            if (angularProxy)
+            {
+                ProcessSwaggerDocumentsAngular(proxyOutputFile);
+            }
         }
 
-        private static void ProcessSwaggerDocuments(string proxyOutputFile)
+        private static void ProcessSwaggerDocumentsCSharp(string proxyOutputFile)
         {
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
@@ -136,7 +143,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                                 x.Type.GetCleanTypeName(),
                                                 GetDefaultValue(x),
                                                 parameter)
-                                            : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName());
+                                            : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName());
                                         return parameter;
                                     }));
 
@@ -212,7 +219,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                             GetDefaultType(x),
                                             x.Type.GetCleanTypeName(),
                                             GetDefaultValue(x))
-                                        : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName())));
+                                        : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName())));
 
                         WriteLine("/// <summary>");
                         var summary = (SecurityElement.Escape(operationDef.Description) ?? "").Replace("\n", "\n///");
@@ -386,11 +393,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "var fileContent = new ByteArrayContent({0}.Item1);",
+                                                "var fileContent = new ByteArrayContent({0}.Item2);",
                                                 formParam.Type.Name));
                                         WriteLine(
                                             string.Format(
-                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item2\" }};",
+                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item1\" }};",
                                                 formParam.Type.Name));
                                     }
                                     WriteLine("HttpContent content = new FormUrlEncodedContent(formKeyValuePairs);");
@@ -529,6 +536,273 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 // close namespace def
                 WriteLine("}");
                 File.WriteAllText(proxyOutputFile, FileText.ToString());
+            }
+        }
+
+        private static void ProcessSwaggerDocumentsAngular(string proxyOutputFile)
+        {
+            FileText = new StringBuilder();
+
+            Console.WriteLine();
+            Console.WriteLine("Processing Swagger documents...");
+            foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
+            {
+                var endPoint = swaggerDocDictionaryEntry.Key;
+                Console.WriteLine("Processing {0}", endPoint.Url);
+
+                WriteLine("//////////////////////////////////////");
+                WriteLine(string.Format("// {0}", endPoint.Namespace));
+                WriteLine(string.Format("// {0}", endPoint.Url));
+                WriteLine("//////////////////////////////////////");
+                WriteLine();
+                string methodNameAppend = string.Empty;
+
+                var result = swaggerDocDictionaryEntry.Value;
+                var parser = new SwaggerParser();
+                var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
+
+                WriteLine("/* jshint -W097 */");
+                WriteLine("'use strict'");
+
+                WriteLine(string.Format("angular.module('{0}', [])", endPoint.Namespace));
+                WriteLine(string.Format(".service('{0}', [", endPoint.Namespace.Replace(".", string.Empty)));
+                WriteLine("'$http, $httpParamSerializer', function($http, $httpParamSerializer) {");
+
+                WriteLine(@"// helper method for building uris.");
+                WriteLine(
+                        string.Format(
+                            "this.{0}{1} = function(url, name, value)",
+                            "AppendQuery",
+                            methodNameAppend));
+                WriteLine("{");
+                WriteLine("if (url.indexOf('?') === -1) { url += '?='; }");
+                WriteLine("else { url += '&=' }");
+                WriteLine("url += name + '=' + value;");
+                WriteLine("return url;");
+                WriteLine("}");
+                WriteLine();
+
+                var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
+                foreach (var proxy in proxies)
+                {
+                    // start class defintion
+                    WriteLine("//////////////////////////////////////");
+                    WriteLine(string.Format("// {0} methods", proxy));
+                    WriteLine("//////////////////////////////////////");
+                    WriteLine();
+
+                    // Async operations (web methods)
+                    var proxy1 = proxy;
+                    foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy1)))
+                    {
+                        string parameters = string.Join(
+                            ", ",
+                            operationDef.Parameters.OrderByDescending(i => i.IsRequired)
+                                .Select(
+                                    x =>
+                                    string.Format("{0}", x.Type.GetCleanTypeName())));
+
+                        WriteLine("// <summary>");
+                        var summary = (operationDef.Description ?? "")
+                                    .Replace("<p>\r\n", string.Empty)
+                                    .Replace("<p>", string.Empty)
+                                    .Replace("</p>", string.Empty)
+                                    .Replace("\n", string.Format("\n{0}//", new string(' ', TextPadding * 4)));
+                        if (string.IsNullOrWhiteSpace(summary))
+                        {
+                            WriteLine("//");
+                        }
+                        else
+                        {
+                            WriteLine(string.Format("// {0}", summary));
+                        }
+                        WriteLine("// </summary>");
+                        foreach (var parameter in operationDef.Parameters)
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "// <param name=\"{0}\">{1}</param>",
+                                    parameter.Type.Name,
+                                    (parameter.Description ?? "")
+                                    .Replace("<p>r\n", string.Empty)
+                                    .Replace("<p>", string.Empty)
+                                    .Replace("</p>", string.Empty)
+                                    .Replace("\n", string.Format("\n{0}//", new string(' ', TextPadding * 4)))));
+                        }
+
+                        WriteLine(
+                            string.Format(
+                                "this.{0}{1} = function({2})",
+                                SwaggerParser.FixTypeName(operationDef.OperationId),
+                                methodNameAppend,
+                                parameters));
+                        WriteLine("{");
+
+                        var optionalParameters = operationDef.Parameters.Where(x => !x.IsRequired).ToList();
+                        if (optionalParameters.Any())
+                        {
+                            WriteLine("// Add defualt values to optional parameters");
+                        }
+                        for (int i = 0; i < optionalParameters.Count(); i++)
+                        {
+                            var defaultValue = "null;";
+                            if (!optionalParameters[i].Type.IsNullableType && optionalParameters[i].CollectionFormat != "multi" &&
+                                optionalParameters[i].Type.EnumValues != null && optionalParameters[i].Type.EnumValues.Any())
+                            {
+                                defaultValue = string.Format("'{0}'", optionalParameters[i].Type.EnumValues.FirstOrDefault());
+                            }
+                            WriteLine(string.Format("if (typeof {0} === 'undefined') {{ {0} = {1} }}",
+                                optionalParameters[i].Type.GetCleanTypeName(),
+                                defaultValue));
+                            if (i + 1 == optionalParameters.Count)
+                            {
+                                WriteLine();
+                            }
+                        }
+
+                        WriteLine("// Build url");
+                        var pathParams = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Path).ToList();
+                        string urlFormat;
+                        if (operationDef.Path.StartsWith("/"))
+                        {
+                            urlFormat = string.Format("var url = \"{0}\"", operationDef.Path.Substring(1));
+                        }
+                        else
+                        {
+                            urlFormat = string.Format("var url = \"{0}\"", operationDef.Path);
+                        }
+                        WriteLine(pathParams.Any() ? urlFormat : string.Format("{0};", urlFormat));
+
+                        for (int i = 0; i < pathParams.Count(); i++)
+                        {
+                            var currentPathParm = pathParams[i];
+                            var paramText = string.Format("\t.replace(\"{{{0}}}\", {0})", currentPathParm.Type.GetCleanTypeName());
+                            WriteLine(i + 1 == pathParams.Count ? string.Format("{0};", paramText) : paramText);
+                        }
+
+                        var queryParams = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Query).ToList();
+                        if (queryParams.Count > 0)
+                        {
+                            foreach (var parameter in queryParams)
+                            {
+                                var nullIfStatementOpen = string.Empty;
+                                var nullIfStatementClose = string.Empty;
+
+                                if (parameter.IsRequired == false && (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
+                                {
+                                    nullIfStatementOpen = string.Format("if ({0} != null) {{ ", parameter.Type.GetCleanTypeName());
+                                }
+
+                                var appendQueryText = string.Format(
+                                    "url = AppendQuery(url, \"{0}\", {1});",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName());
+
+                                if (parameter.IsRequired == false && (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
+                                {
+                                    nullIfStatementClose = " }";
+                                }
+
+                                WriteLine(string.Format("{0}{1}{2}", nullIfStatementOpen, appendQueryText, nullIfStatementClose));
+                            }
+                        }
+
+                        WriteLine();
+                        switch (operationDef.Method.ToUpperInvariant())
+                        {
+                            case "GET":
+                                WriteLine("return $http.get(url);");
+                                break;
+
+                            case "DELETE":
+                                WriteLine("return $http.delete(url);");
+                                break;
+
+                            case "PUT":
+                                var putBodyParam = operationDef.Parameters.FirstOrDefault(
+                                    i => i.ParameterIn == ParameterIn.Body);
+                                if (putBodyParam != null)
+                                {
+                                    WriteLine(
+                                        string.Format(
+                                            "return $http.put(url, {0});",
+                                            putBodyParam.Type.Name));
+                                }
+                                else if (operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData))
+                                {
+                                    var formData = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.FormData).ToList();
+                                    WriteLine("if (file && !file.$error) {");
+                                    WriteLine("file.upload = Upload.upload({");
+                                    WriteLine("url: url,");
+                                    foreach (var formDataParams in formData.Select(x => string.Format("{0}: {1},", x.Type.Name, x.Type.GetCleanTypeName())))
+                                    {
+                                        WriteLine(formDataParams);
+                                    }
+                                    WriteLine("});");
+                                    WriteLine("file.upload");
+                                    WriteLine("}");
+                                }
+                                else
+                                {
+                                    WriteLine(
+                                        "return $http.put(url);");
+                                }
+
+                                break;
+
+                            case "POST":
+                                var postBodyParam =
+                                    operationDef.Parameters.FirstOrDefault(i => i.ParameterIn == ParameterIn.Body);
+                                if (postBodyParam != null)
+                                {
+                                    WriteLine(
+                                        string.Format(
+                                            "return $http.post(url, {0});",
+                                            postBodyParam.Type.Name));
+                                }
+                                else if (operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData))
+                                {
+                                    var formData = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.FormData).ToList();
+                                    WriteLine("if (file && !file.$error) {");
+                                    WriteLine("file.upload = Upload.upload({");
+                                    WriteLine("url: url,");
+                                    WriteLine("file: file,");
+                                    WriteLine("data: {");
+                                    foreach (var formDataParams in formData.Where(x => x.Type.TypeName != "file").Select(x => string.Format("{0}: {1},", x.Type.Name, x.Type.GetCleanTypeName())))
+                                    {
+                                        WriteLine(formDataParams);
+                                    }
+                                    WriteLine("}");
+                                    WriteLine("}");
+                                    WriteLine(");");
+                                    WriteLine("file.upload.then(function (response) { $timeout(function () { file.result = response.data; }); }, function (response) { return response; });");
+                                    WriteLine("}");
+                                }
+                                else
+                                {
+                                    WriteLine(
+                                        "return $http.post(url);");
+                                }
+
+                                break;
+                        }
+
+                        WriteLine("}"); // close up the method
+                        WriteLine();
+                    }
+                }
+
+                // close namespace def
+                WriteLine("}");
+                WriteLine("]);");
+                WriteLine();
+                WriteLine();
+                var contents = FileText.ToString();
+                File.WriteAllText(proxyOutputFile.Replace(".cs", ".js"), contents);
+                JavaScriptMinifier jsCompressor = new JavaScriptMinifier();
+                contents = jsCompressor.MinifyString(contents);
+
+                File.WriteAllText(proxyOutputFile.Replace(".cs", ".min.js"), contents);
             }
         }
 

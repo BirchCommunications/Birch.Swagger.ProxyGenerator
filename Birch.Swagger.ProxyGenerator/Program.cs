@@ -29,6 +29,7 @@ namespace Birch.Swagger.ProxyGenerator
                 var assemblyFile = string.Empty;
                 var proxyOutputFile = string.Empty;
                 var baseUrl = string.Empty;
+                var angularProxy = false;
                 // base directory is exe directory unless switch override
                 string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
                     .Replace(@"file:\", string.Empty);
@@ -57,6 +58,9 @@ namespace Birch.Swagger.ProxyGenerator
                                 break;
                             case "-basedirectory":
                                 baseDirectory = args[i + 1];
+                                break;
+                            case "-angularproxy":
+                                angularProxy = args[i + 1].ToLower() == "true";
                                 break;
                         }
                     }
@@ -128,7 +132,7 @@ namespace Birch.Swagger.ProxyGenerator
                 // Run generator against provided assmbly file or baseUrl
                 if (!string.IsNullOrWhiteSpace(assemblyFile))
                 {
-                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints);
+                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints, angularProxy);
                     if (processInMemoryStatus != 0)
                     {
                         return processInMemoryStatus;
@@ -136,7 +140,7 @@ namespace Birch.Swagger.ProxyGenerator
                 }
                 else
                 {
-                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl);
+                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl, angularProxy);
                 }
 
                 // All done
@@ -170,7 +174,7 @@ namespace Birch.Swagger.ProxyGenerator
             }
         }
 
-        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints)
+        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, bool angularProxy)
         {
             string exeBinDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
                                          .Replace(@"file:\", string.Empty) + @"\bin";
@@ -221,7 +225,7 @@ namespace Birch.Swagger.ProxyGenerator
             TestServer testServer = TestServer.Create(builder => { owinStartupClass.Configuration(builder); });
 
             Console.WriteLine("Generating Proxy...");
-            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer);
+            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, angularProxy);
             return 0;
         }
 
