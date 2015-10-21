@@ -590,6 +590,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("using System.Collections.Generic;");
             WriteLine("using System.Threading.Tasks;");
             WriteLine("using System.Net.Http;");
+            WriteLine("using System.Net.Http.Headers;");
             WriteLine();
             WriteLine("// ReSharper disable All");
             WriteLine();
