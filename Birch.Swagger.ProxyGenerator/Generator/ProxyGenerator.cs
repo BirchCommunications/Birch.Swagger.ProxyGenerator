@@ -136,7 +136,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                                 x.Type.GetCleanTypeName(),
                                                 GetDefaultValue(x),
                                                 parameter)
-                                            : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName());
+                                            : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName());
                                         return parameter;
                                     }));
 
@@ -212,7 +212,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                             GetDefaultType(x),
                                             x.Type.GetCleanTypeName(),
                                             GetDefaultValue(x))
-                                        : string.Format("{0} {1}", x.Type.TypeName, x.Type.GetCleanTypeName())));
+                                        : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName())));
 
                         WriteLine("/// <summary>");
                         var summary = (SecurityElement.Escape(operationDef.Description) ?? "").Replace("\n", "\n///");
@@ -386,11 +386,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     {
                                         WriteLine(
                                             string.Format(
-                                                "var fileContent = new ByteArrayContent({0}.Item1);",
+                                                "var fileContent = new ByteArrayContent({0}.Item2);",
                                                 formParam.Type.Name));
                                         WriteLine(
                                             string.Format(
-                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item2\" }};",
+                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item1\" }};",
                                                 formParam.Type.Name));
                                     }
                                     WriteLine("HttpContent content = new FormUrlEncodedContent(formKeyValuePairs);");
