@@ -95,7 +95,26 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
 
                 WriteLine(string.Format("namespace {0} {{", endPoint.Namespace));
+                
+                // Web proxy response class
+                WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
+                WriteLine("{");
+                WriteLine("public HttpResponseMessage Response { get; internal set; }");
+                WriteLine("public TimeSpan RequestDuration { get; internal set; }");
+                WriteLine("public T Body { get; internal set; }");
+                WriteLine("public Exception Exception { get; set; }");
+                WriteLine("}");
+                WriteLine("public interface IWebProxyResponse");
+                WriteLine("{");
+                WriteLine("HttpResponseMessage Response { get; }");
+                WriteLine("TimeSpan RequestDuration { get; }");
+                WriteLine("Exception Exception { get; set; }");
+                WriteLine("}");
 
+                // add base proxy
+                AddBaseProxy();
+
+                // Interfaces
                 var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
                 foreach (var proxy in proxies)
                 {
@@ -139,8 +158,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                             : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName());
                                         return parameter;
                                     }));
-
-
                         WriteLine(
                             string.Format(
                                 "Task{0} {1}{2}({3});",
@@ -148,6 +165,14 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
                                 parameters));
+                        WriteLine(
+                            string.Format(
+                                "Task<WebProxyResponse{0}> {1}Core{2}({3});",
+                                returnType,
+                                SwaggerParser.FixTypeName(operationDef.OperationId),
+                                methodNameAppend,
+                                parameters));
+
                     }
                     WriteLine("}");
                 }
@@ -162,7 +187,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         string.Format(
                             "public class {0} : {1}, I{0}",
                             className,
-                            endPoint.BaseProxyClass));
+                            string.IsNullOrWhiteSpace(endPoint.BaseProxyClass) ? "BaseProxy" : endPoint.BaseProxyClass));
                     WriteLine("{");
 
                     WriteLine(
@@ -173,17 +198,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteLine("{}");
                     WriteLine();
                     List<Enum> proxyParamEnums = new List<Enum>();
-
-                    WriteLine(@"// helper function for building uris.");
-                    WriteLine(@"private string AppendQuery(string currentUrl, string paramName, string value)");
-                    WriteLine(@"{");
-                    WriteLine(@"if (currentUrl.Contains(""?""))");
-                    WriteLine(@"currentUrl += string.Format(""&{0}={1}"", paramName, Uri.EscapeUriString(value));");
-                    WriteLine(@"else");
-                    WriteLine(@"currentUrl += string.Format(""?{0}={1}"", paramName, Uri.EscapeUriString(value));");
-                    WriteLine(@"return currentUrl;");
-                    WriteLine(@"}");
-                    WriteLine();
 
                     // Async operations (web methods)
                     var proxy1 = proxy;
@@ -233,10 +247,33 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     parameter.Type.Name,
                                     (SecurityElement.Escape(parameter.Description) ?? "").Replace("\n", "\n///")));
                         }
-
                         WriteLine(
                             string.Format(
                                 "public async Task{0} {1}{2}({3})",
+                                returnType,
+                                SwaggerParser.FixTypeName(operationDef.OperationId),
+                                methodNameAppend,
+                                parameters));
+                        WriteLine("{");
+                        WriteLine(
+                            string.Format(
+                                "var output = await {0}Core{1}({2});",
+                                SwaggerParser.FixTypeName(operationDef.OperationId),
+                                methodNameAppend,
+                                string.Join(", ", operationDef.Parameters.OrderByDescending(i => i.IsRequired).Select(x => x.Type.GetCleanTypeName()))));
+                        WriteLine("if (output.Exception != null)");
+                        WriteLine("{");
+                        WriteLine("throw output.Exception;");
+                        WriteLine("}");
+                        if (string.IsNullOrWhiteSpace(operationDef.ReturnType) == false)
+                        {
+                            WriteLine("return output.Body;");
+                        }
+                        WriteLine("}");
+                        WriteLine();
+                        WriteLine(
+                            string.Format(
+                                "public async Task<WebProxyResponse{0}> {1}Core{2}({3})",
                                 returnType,
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
@@ -342,6 +379,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine();
                         WriteLine("using (var client = BuildHttpClient())");
                         WriteLine("{");
+                        WriteLine(string.Format("await BeforeRequestAsync(url, \"{0}\");", operationDef.Method.ToUpperInvariant()));
+                        WriteLine("var stopwatch = new Stopwatch();");
+                        WriteLine("stopwatch.Start();");
                         switch (operationDef.Method.ToUpperInvariant())
                         {
                             case "GET":
@@ -456,16 +496,25 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                                 break;
                         }
-                        WriteLine("await EnsureSuccessStatusCodeAsync(response);");
+                        WriteLine("stopwatch.Stop();");
+                        WriteLine(string.Format("var output = new WebProxyResponse{0}", returnType));
+                        WriteLine("{");
+                        WriteLine("Response = response,");
+                        WriteLine("RequestDuration = stopwatch.Elapsed");
+                        WriteLine("};");
+                        WriteLine("await AfterRequestAsync(response, output);");
 
                         if (string.IsNullOrWhiteSpace(operationDef.ReturnType) == false)
                         {
+                            WriteLine("if (output.Exception == null)");
+                            WriteLine("{");
                             WriteLine(
                                 string.Format(
-                                    "return await response.Content.ReadAsAsync<{0}>().ConfigureAwait(false);",
+                                    "output.Body = await response.Content.ReadAsAsync<{0}>().ConfigureAwait(false);",
                                     operationDef.ReturnType));
+                            WriteLine("}");
                         }
-
+                        WriteLine("return output;");
                         WriteLine("}"); // close up the using
                         WriteLine("}"); // close up the method
                         WriteLine();
@@ -532,6 +581,130 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
         }
 
+        private static void AddBaseProxy()
+        {
+            WriteLine("public abstract class BaseProxy");
+            WriteLine("{");
+            WriteLine("protected readonly Uri BaseUrl;");
+            WriteLine("public readonly List<Action<string, string>> GlobalBeforeRequestActions;");
+            WriteLine("public readonly List<Action<HttpResponseMessage, IWebProxyResponse>> GlobalAfterRequestActions;");
+            WriteLine("public readonly List<Action<string, string>> BeforeRequestActions;");
+            WriteLine("public readonly List<Action<HttpResponseMessage>> AfterRequestActions;");
+            WriteLine();
+            WriteLine("protected BaseProxy(Uri baseUrl)");
+            WriteLine("{");
+            WriteLine("BaseUrl = baseUrl;");
+            WriteLine("GlobalBeforeRequestActions = new List<Action<string, string>>();");
+            WriteLine("GlobalAfterRequestActions = new List<Action<HttpResponseMessage, IWebProxyResponse>>();");
+            WriteLine("BeforeRequestActions = new List<Action<string, string>>();");
+            WriteLine("AfterRequestActions = new List<Action<HttpResponseMessage>>();");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("/// <summary>");
+            WriteLine("/// Builds the HTTP client.");
+            WriteLine("/// </summary>");
+            WriteLine("/// <returns></returns>");
+            WriteLine("protected virtual HttpClient BuildHttpClient()");
+            WriteLine("{");
+            WriteLine("var httpClient = new HttpClient");
+            WriteLine("{");
+            WriteLine("BaseAddress = BaseUrl");
+            WriteLine("};");
+            WriteLine("return httpClient;");
+            WriteLine("}");
+            WriteLine("");
+            WriteLine("/// <summary>");
+            WriteLine("/// Runs before the request asynchronous.");
+            WriteLine("/// </summary>");
+            WriteLine("/// <param name=\"requestUri\">The request URI.</param>");
+            WriteLine("/// <param name=\"requestMethod\">The request method.</param>");
+            WriteLine("/// <returns></returns>");
+            WriteLine("public virtual Task BeforeRequestAsync(string requestUri, string requestMethod)");
+            WriteLine("{");
+            WriteLine("foreach (var globalBeforeRequestAction in GlobalBeforeRequestActions)");
+            WriteLine("{");
+            WriteLine("globalBeforeRequestAction.Invoke(requestUri, requestMethod);");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("foreach (var beforeRequestAction in BeforeRequestActions)");
+            WriteLine("{");
+            WriteLine("beforeRequestAction.Invoke(requestUri, requestMethod);");
+            WriteLine("}");
+            WriteLine("BeforeRequestActions.Clear();");
+            WriteLine("return Task.FromResult(0);");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("/// <summary>");
+            WriteLine("/// Runs After the request asynchronous.");
+            WriteLine("/// </summary>");
+            WriteLine("/// <param name=\"response\">The response.</param>");
+            WriteLine("/// <param name=\"webProxyResponse\">The web proxy response.</param>");
+            WriteLine("/// <returns></returns>");
+            WriteLine("public virtual async Task AfterRequestAsync(HttpResponseMessage response, IWebProxyResponse webProxyResponse)");
+            WriteLine("{");
+            WriteLine("foreach (var globalAfterRequestAction in GlobalAfterRequestActions)");
+            WriteLine("{");
+            WriteLine("globalAfterRequestAction.Invoke(response, webProxyResponse);");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("foreach (var afterRequestAction in AfterRequestActions)");
+            WriteLine("{");
+            WriteLine("afterRequestAction.Invoke(response);");
+            WriteLine("}");
+            WriteLine("AfterRequestActions.Clear();");
+            WriteLine();
+            WriteLine("if (response.IsSuccessStatusCode)");
+            WriteLine("{");
+            WriteLine("return;");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("try");
+            WriteLine("{");
+            WriteLine("var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);");
+            WriteLine("webProxyResponse.Exception = new SimpleHttpResponseException(response.StatusCode, content);");
+            WriteLine("}");
+            WriteLine("finally");
+            WriteLine("{");
+            WriteLine("response.Content?.Dispose();");
+            WriteLine("}");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("/// <summary>");
+            WriteLine("/// Appends the query.");
+            WriteLine("/// </summary>");
+            WriteLine("/// <param name=\"currentUrl\">The current URL.</param>");
+            WriteLine("/// <param name=\"paramName\">Name of the parameter.</param>");
+            WriteLine("/// <param name=\"value\">The value.</param>");
+            WriteLine("/// <returns></returns>");
+            WriteLine("protected string AppendQuery(string currentUrl, string paramName, string value)");
+            WriteLine("{");
+            WriteLine("if (currentUrl.Contains(\"?\"))");
+            WriteLine("{");
+            WriteLine("currentUrl += string.Format(\"&{0}={1}\", paramName, Uri.EscapeUriString(value));");
+            WriteLine("}");
+            WriteLine("else");
+            WriteLine("{");
+            WriteLine("currentUrl += string.Format(\"?{0}={1}\", paramName, Uri.EscapeUriString(value));");
+            WriteLine("}");
+            WriteLine("return currentUrl;");
+            WriteLine("}");
+            WriteLine("}");
+            WriteLine();
+            WriteLine("/// <summary>");
+            WriteLine("/// Simple Http Response");
+            WriteLine("/// </summary>");
+            WriteLine("public class SimpleHttpResponseException : Exception");
+            WriteLine("{");
+            WriteLine("public HttpStatusCode StatusCode { get; private set; }");
+            WriteLine();
+            WriteLine("public SimpleHttpResponseException(HttpStatusCode statusCode, string content)");
+            WriteLine(": base(content)");
+            WriteLine("{");
+            WriteLine("StatusCode = statusCode;");
+            WriteLine("}");
+            WriteLine("}");
+        }
+
         private static async Task GetEndpointSwaggerDoc(TestServer testServer, SwaggerApiProxySettingsEndPoint endPoint)
         {
             var swaggerString = await testServer.HttpClient.GetStringAsync(endPoint.Url);
@@ -545,9 +718,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static async Task GetEndpointSwaggerDoc(string requestUri, SwaggerApiProxySettingsEndPoint endPoint)
         {
-            using (var httpClient = new HttpClient())
+            using (var client = new HttpClient())
             {
-                var swaggerString = await httpClient.GetStringAsync(requestUri);
+                var swaggerString = await client.GetStringAsync(requestUri);
                 if (swaggerString == null)
                 {
                     throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
@@ -588,11 +761,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine();
             WriteLine("using System;");
             WriteLine("using System.Collections.Generic;");
+            WriteLine("using System.Diagnostics;");
+            WriteLine("using System.Net;");
             WriteLine("using System.Threading.Tasks;");
             WriteLine("using System.Net.Http;");
-            WriteLine("using System.Net.Http.Headers;");
-            WriteLine();
-            WriteLine("// ReSharper disable All");
             WriteLine();
         }
 
@@ -641,7 +813,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteLine(string text)
         {
-            if (text == "}" && TextPadding != 0)
+            if ((text == "}" || text == "};") && TextPadding != 0)
             {
                 TextPadding--;
             }

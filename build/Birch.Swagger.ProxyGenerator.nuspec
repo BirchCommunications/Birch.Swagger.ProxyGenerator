@@ -13,6 +13,7 @@
     <copyright>Copyright 2015 Birch</copyright>
     <dependencies>
       <dependency id="Microsoft.AspNet.WebApi.Client" version="5.2.3" />
+      <dependency id="Newtonsoft.Json" version="8.0.2" />
     </dependencies>
   </metadata>
   <files>
@@ -21,7 +22,6 @@
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.exe" target="tools/ProxyGenerator" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.config.json" target="tools/ProxyGenerator" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.config.json" target="content" />
-    <file src="..\Birch.Swagger.ProxyGenerator\bin\release\BaseProxy.cs" target="content" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\SwaggerProxy.cs" target="content" />
     <file src="Birch.Swagger.ProxyGenerator.targets" target="build" />
     <file src="Birch.Swagger.ProxyGenerator.props" target="content/build" />
