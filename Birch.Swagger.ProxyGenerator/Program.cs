@@ -79,6 +79,11 @@ namespace Birch.Swagger.ProxyGenerator
                         + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
                     Console.WriteLine();
                     Console.WriteLine("Exiting Proxy Generator.");
+                    if (Debugger.IsAttached)
+                    {
+                        Console.WriteLine("Press any key to continue...");
+                        Console.ReadKey();
+                    }
                     return 1;
                 }
 
@@ -146,6 +151,11 @@ namespace Birch.Swagger.ProxyGenerator
                 Console.WriteLine("Proxy generation completed....");
                 Console.WriteLine("Time Taken: {0}", appStopwatch.Elapsed.ToString());
                 Console.WriteLine();
+                if (Debugger.IsAttached)
+                {
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                }
                 return 0;
             }
             catch (AggregateException aex)
@@ -158,6 +168,11 @@ namespace Birch.Swagger.ProxyGenerator
                 }
 
                 Console.WriteLine("Exiting Proxy Generator.");
+                if (Debugger.IsAttached)
+                {
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                }
                 return 1;
             }
             catch (Exception ex)
@@ -166,6 +181,11 @@ namespace Birch.Swagger.ProxyGenerator
                 Console.WriteLine("StackTrace: {0}", ex.StackTrace);
                 Console.WriteLine();
                 Console.WriteLine("Exiting Proxy Generator.");
+                if (Debugger.IsAttached)
+                {
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                }
                 return 1;
             }
         }
