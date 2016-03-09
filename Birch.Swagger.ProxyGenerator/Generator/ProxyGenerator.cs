@@ -110,7 +110,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 WriteLine("TimeSpan RequestDuration { get; }");
                 WriteLine("Exception Exception { get; set; }");
                 WriteLine("}");
-
+                WriteLine("public class BeforeRequestActionArgs");
+                WriteLine("{");
+                WriteLine("public string Uri { get; set; }");
+                WriteLine("public string ActionName { get; set; }");
+                WriteLine("public string Method { get; set; }");
+                WriteLine("}");
                 // add base proxy
                 AddBaseProxy();
 
@@ -379,7 +384,13 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine();
                         WriteLine("using (var client = BuildHttpClient())");
                         WriteLine("{");
-                        WriteLine(string.Format("await BeforeRequestAsync(url, \"{0}\");", operationDef.Method.ToUpperInvariant()));
+                        WriteLine("var beforeRequestActionArgs = new BeforeRequestActionArgs");
+                        WriteLine("{");
+                        WriteLine("Uri = url,");
+                        WriteLine(string.Format("ActionName = \"{0}\",", SwaggerParser.FixTypeName(operationDef.OperationId)));
+                        WriteLine(string.Format("Method = \"{0}\",", operationDef.Method.ToUpperInvariant()));
+                        WriteLine("};");
+                        WriteLine("await BeforeRequestAsync(beforeRequestActionArgs);");
                         WriteLine("var stopwatch = new Stopwatch();");
                         WriteLine("stopwatch.Start();");
                         switch (operationDef.Method.ToUpperInvariant())
@@ -502,7 +513,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine("Response = response,");
                         WriteLine("RequestDuration = stopwatch.Elapsed");
                         WriteLine("};");
-                        WriteLine("await AfterRequestAsync(response, output);");
+                        WriteLine("await AfterRequestAsync(output);");
 
                         if (string.IsNullOrWhiteSpace(operationDef.ReturnType) == false)
                         {
@@ -586,18 +597,18 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("public abstract class BaseProxy");
             WriteLine("{");
             WriteLine("protected readonly Uri BaseUrl;");
-            WriteLine("public readonly List<Action<string, string>> GlobalBeforeRequestActions;");
-            WriteLine("public readonly List<Action<HttpResponseMessage, IWebProxyResponse>> GlobalAfterRequestActions;");
-            WriteLine("public readonly List<Action<string, string>> BeforeRequestActions;");
-            WriteLine("public readonly List<Action<HttpResponseMessage>> AfterRequestActions;");
+            WriteLine("public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;");
+            WriteLine("public readonly List<Action<IWebProxyResponse>> GlobalAfterRequestActions;");
+            WriteLine("public readonly List<Action<BeforeRequestActionArgs>> BeforeRequestActions;");
+            WriteLine("public readonly List<Action<IWebProxyResponse>> AfterRequestActions;");
             WriteLine();
             WriteLine("protected BaseProxy(Uri baseUrl)");
             WriteLine("{");
             WriteLine("BaseUrl = baseUrl;");
-            WriteLine("GlobalBeforeRequestActions = new List<Action<string, string>>();");
-            WriteLine("GlobalAfterRequestActions = new List<Action<HttpResponseMessage, IWebProxyResponse>>();");
-            WriteLine("BeforeRequestActions = new List<Action<string, string>>();");
-            WriteLine("AfterRequestActions = new List<Action<HttpResponseMessage>>();");
+            WriteLine("GlobalBeforeRequestActions = new List<Action<BeforeRequestActionArgs>>();");
+            WriteLine("GlobalAfterRequestActions = new List<Action<IWebProxyResponse>>();");
+            WriteLine("BeforeRequestActions = new List<Action<BeforeRequestActionArgs>>();");
+            WriteLine("AfterRequestActions = new List<Action<IWebProxyResponse>>();");
             WriteLine("}");
             WriteLine();
             WriteLine("/// <summary>");
@@ -619,16 +630,16 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("/// <param name=\"requestUri\">The request URI.</param>");
             WriteLine("/// <param name=\"requestMethod\">The request method.</param>");
             WriteLine("/// <returns></returns>");
-            WriteLine("public virtual Task BeforeRequestAsync(string requestUri, string requestMethod)");
+            WriteLine("public virtual Task BeforeRequestAsync(BeforeRequestActionArgs actionArgs)");
             WriteLine("{");
             WriteLine("foreach (var globalBeforeRequestAction in GlobalBeforeRequestActions)");
             WriteLine("{");
-            WriteLine("globalBeforeRequestAction.Invoke(requestUri, requestMethod);");
+            WriteLine("globalBeforeRequestAction.Invoke(actionArgs);");
             WriteLine("}");
             WriteLine();
             WriteLine("foreach (var beforeRequestAction in BeforeRequestActions)");
             WriteLine("{");
-            WriteLine("beforeRequestAction.Invoke(requestUri, requestMethod);");
+            WriteLine("beforeRequestAction.Invoke(actionArgs);");
             WriteLine("}");
             WriteLine("BeforeRequestActions.Clear();");
             WriteLine("return Task.FromResult(0);");
@@ -640,32 +651,32 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("/// <param name=\"response\">The response.</param>");
             WriteLine("/// <param name=\"webProxyResponse\">The web proxy response.</param>");
             WriteLine("/// <returns></returns>");
-            WriteLine("public virtual async Task AfterRequestAsync(HttpResponseMessage response, IWebProxyResponse webProxyResponse)");
+            WriteLine("public virtual async Task AfterRequestAsync(IWebProxyResponse webProxyResponse)");
             WriteLine("{");
             WriteLine("foreach (var globalAfterRequestAction in GlobalAfterRequestActions)");
             WriteLine("{");
-            WriteLine("globalAfterRequestAction.Invoke(response, webProxyResponse);");
+            WriteLine("globalAfterRequestAction.Invoke(webProxyResponse);");
             WriteLine("}");
             WriteLine();
             WriteLine("foreach (var afterRequestAction in AfterRequestActions)");
             WriteLine("{");
-            WriteLine("afterRequestAction.Invoke(response);");
+            WriteLine("afterRequestAction.Invoke(webProxyResponse);");
             WriteLine("}");
             WriteLine("AfterRequestActions.Clear();");
             WriteLine();
-            WriteLine("if (response.IsSuccessStatusCode)");
+            WriteLine("if (webProxyResponse.Response.IsSuccessStatusCode)");
             WriteLine("{");
             WriteLine("return;");
             WriteLine("}");
             WriteLine();
             WriteLine("try");
             WriteLine("{");
-            WriteLine("var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);");
-            WriteLine("webProxyResponse.Exception = new SimpleHttpResponseException(response.StatusCode, content);");
+            WriteLine("var content = await webProxyResponse.Response.Content.ReadAsStringAsync().ConfigureAwait(false);");
+            WriteLine("webProxyResponse.Exception = new SimpleHttpResponseException(webProxyResponse.Response.StatusCode, content);");
             WriteLine("}");
             WriteLine("finally");
             WriteLine("{");
-            WriteLine("response.Content?.Dispose();");
+            WriteLine("webProxyResponse.Response.Content?.Dispose();");
             WriteLine("}");
             WriteLine("}");
             WriteLine();
