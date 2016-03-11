@@ -616,7 +616,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("}");
 
             // Base Proxy
-            WriteLine("internal abstract class BaseProxy");
+            WriteLine("public abstract class BaseProxy");
             WriteLine("{");
             WriteLine("protected readonly Uri BaseUrl;");
             WriteLine("public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;");
