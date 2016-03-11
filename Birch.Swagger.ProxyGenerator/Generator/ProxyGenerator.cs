@@ -77,7 +77,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         {
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
-            PrintHeaders();
+
+            // TODO: allow custom namespace later
+            PrintHeaders(string.Empty);
+            AddBaseProxyAndClasses(string.Empty);
+
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
                 var endPoint = swaggerDocDictionaryEntry.Key;
@@ -96,29 +100,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                 WriteLine(string.Format("namespace {0} {{", endPoint.Namespace));
                 
-                // Web proxy response class
-                WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
-                WriteLine("{");
-                WriteLine("public HttpResponseMessage Response { get; internal set; }");
-                WriteLine("public TimeSpan RequestDuration { get; internal set; }");
-                WriteLine("public T Body { get; internal set; }");
-                WriteLine("public Exception Exception { get; set; }");
-                WriteLine("}");
-                WriteLine("public interface IWebProxyResponse");
-                WriteLine("{");
-                WriteLine("HttpResponseMessage Response { get; }");
-                WriteLine("TimeSpan RequestDuration { get; }");
-                WriteLine("Exception Exception { get; set; }");
-                WriteLine("}");
-                WriteLine("public class BeforeRequestActionArgs");
-                WriteLine("{");
-                WriteLine("public string Uri { get; set; }");
-                WriteLine("public string ActionName { get; set; }");
-                WriteLine("public string Method { get; set; }");
-                WriteLine("}");
-                // add base proxy
-                AddBaseProxy();
-
                 // Interfaces
                 var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
                 foreach (var proxy in proxies)
@@ -262,7 +243,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine("{");
                         WriteLine(
                             string.Format(
-                                "var output = await {0}Core{1}({2});",
+                                "var output = await {0}Core{1}({2}).ConfigureAwait(false);",
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
                                 string.Join(", ", operationDef.Parameters.OrderByDescending(i => i.IsRequired).Select(x => x.Type.GetCleanTypeName()))));
@@ -511,7 +492,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine(string.Format("var output = new WebProxyResponse{0}", returnType));
                         WriteLine("{");
                         WriteLine("Response = response,");
-                        WriteLine("RequestDuration = stopwatch.Elapsed");
+                        WriteLine("RequestDuration = stopwatch.Elapsed,");
+                        if (!string.IsNullOrWhiteSpace(returnType))
+                        {
+                            WriteLine(string.Format("ExpectedResponseType = typeof({0})",
+                                returnType.Substring(1, returnType.Length - 2)));
+                        }
                         WriteLine("};");
                         WriteLine("await AfterRequestAsync(output);");
 
@@ -592,9 +578,45 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
         }
 
-        private static void AddBaseProxy()
+        private static void AddBaseProxyAndClasses(string proxyGeneratorNameSpace)
         {
-            WriteLine("public abstract class BaseProxy");
+            proxyGeneratorNameSpace = string.IsNullOrWhiteSpace(proxyGeneratorNameSpace)
+                ? "Birch.Swagger.ProxyGenerator"
+                : proxyGeneratorNameSpace;
+            WriteLine(string.Format("namespace {0}", proxyGeneratorNameSpace));
+            WriteLine("{");
+            // Web proxy response class
+            WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("public HttpResponseMessage Response { get; internal set; }");
+            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
+            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public T Body { get; internal set; }");
+            WriteLine("public Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public class WebProxyResponse : IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("public HttpResponseMessage Response { get; internal set; }");
+            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
+            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public interface IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("HttpResponseMessage Response { get; }");
+            WriteLine("TimeSpan RequestDuration { get; }");
+            WriteLine("Type ExpectedResponseType { get; }");
+            WriteLine("Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public class BeforeRequestActionArgs");
+            WriteLine("{");
+            WriteLine("public string Uri { get; set; }");
+            WriteLine("public string ActionName { get; set; }");
+            WriteLine("public string Method { get; set; }");
+            WriteLine("}");
+
+            // Base Proxy
+            WriteLine("internal abstract class BaseProxy");
             WriteLine("{");
             WriteLine("protected readonly Uri BaseUrl;");
             WriteLine("public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;");
@@ -714,6 +736,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("StatusCode = statusCode;");
             WriteLine("}");
             WriteLine("}");
+
+            WriteLine("}");
         }
 
         private static async Task GetEndpointSwaggerDoc(TestServer testServer, SwaggerApiProxySettingsEndPoint endPoint)
@@ -766,8 +790,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             return "null";
         }
 
-        static void PrintHeaders()
+        static void PrintHeaders(string proxyGeneratorNameSpace)
         {
+            proxyGeneratorNameSpace = string.IsNullOrWhiteSpace(proxyGeneratorNameSpace)
+                ? "Birch.Swagger.ProxyGenerator"
+                : proxyGeneratorNameSpace;
+
             WriteLine("// This file was generated by Birch.Swagger.ProxyGenerator");
             WriteLine();
             WriteLine("using System;");
@@ -776,6 +804,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("using System.Net;");
             WriteLine("using System.Threading.Tasks;");
             WriteLine("using System.Net.Http;");
+            WriteLine("using System.Net.Http.Headers;");
+            WriteLine(string.Format("using {0};", proxyGeneratorNameSpace));
             WriteLine();
         }
 
