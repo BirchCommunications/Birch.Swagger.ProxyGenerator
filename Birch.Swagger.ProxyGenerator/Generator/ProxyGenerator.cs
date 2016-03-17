@@ -99,7 +99,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
 
                 WriteLine(string.Format("namespace {0} {{", endPoint.Namespace));
-                
+
                 // Interfaces
                 var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
                 foreach (var proxy in proxies)
@@ -151,14 +151,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
                                 parameters));
-                        WriteLine(
-                            string.Format(
-                                "Task<WebProxyResponse{0}> {1}Core{2}({3});",
-                                returnType,
-                                SwaggerParser.FixTypeName(operationDef.OperationId),
-                                methodNameAppend,
-                                parameters));
-
                     }
                     WriteLine("}");
                 }
@@ -198,7 +190,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         {
                             enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
                             proxyParamEnums.Add(
-                                new Enum() { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
+                                new Enum { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
                         }
 
                         string parameters = string.Join(
@@ -236,30 +228,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine(
                             string.Format(
                                 "public async Task{0} {1}{2}({3})",
-                                returnType,
-                                SwaggerParser.FixTypeName(operationDef.OperationId),
-                                methodNameAppend,
-                                parameters));
-                        WriteLine("{");
-                        WriteLine(
-                            string.Format(
-                                "var output = await {0}Core{1}({2}).ConfigureAwait(false);",
-                                SwaggerParser.FixTypeName(operationDef.OperationId),
-                                methodNameAppend,
-                                string.Join(", ", operationDef.Parameters.OrderByDescending(i => i.IsRequired).Select(x => x.Type.GetCleanTypeName()))));
-                        WriteLine("if (output.Exception != null)");
-                        WriteLine("{");
-                        WriteLine("throw output.Exception;");
-                        WriteLine("}");
-                        if (string.IsNullOrWhiteSpace(operationDef.ReturnType) == false)
-                        {
-                            WriteLine("return output.Body;");
-                        }
-                        WriteLine("}");
-                        WriteLine();
-                        WriteLine(
-                            string.Format(
-                                "public async Task<WebProxyResponse{0}> {1}Core{2}({3})",
                                 returnType,
                                 SwaggerParser.FixTypeName(operationDef.OperationId),
                                 methodNameAppend,
@@ -374,6 +342,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         WriteLine("await BeforeRequestAsync(beforeRequestActionArgs);");
                         WriteLine("var stopwatch = new Stopwatch();");
                         WriteLine("stopwatch.Start();");
+
                         switch (operationDef.Method.ToUpperInvariant())
                         {
                             case "GET":
@@ -385,106 +354,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 break;
 
                             case "PUT":
-                                var putBodyParam = operationDef.Parameters.FirstOrDefault(
-                                    i => i.ParameterIn == ParameterIn.Body);
-                                if (putBodyParam != null)
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "var response = await client.PutAsJsonAsync(url, {0}).ConfigureAwait(false);",
-                                            putBodyParam.Type.Name));
-                                }
-                                else if (operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData))
-                                {
-                                    var formData =
-                                        operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.FormData).ToList();
-                                    WriteLine("var formKeyValuePairs = new List<KeyValuePair<string, string>>();");
-                                    foreach (var formParam in formData.Where(x => x.Type.TypeName != "file"))
-                                    {
-                                        if (formParam.IsRequired == false)
-                                        {
-                                            WriteNullIfStatementOpening(formParam.Type.Name, formParam.Type.TypeName);
-                                        }
-                                        WriteLine(
-                                            string.Format(
-                                                "formKeyValuePairs.Add(new KeyValuePair<string, string>(\"{0}\", {0}));",
-                                                formParam.Type.Name));
-                                        if (formParam.IsRequired == false)
-                                        {
-                                            WriteLine("}");
-                                        }
-                                    }
-                                    foreach (var formParam in formData.Where(x => x.Type.TypeName == "file"))
-                                    {
-                                        WriteLine(
-                                            string.Format(
-                                                "var fileContent = new ByteArrayContent({0}.Item2);",
-                                                formParam.Type.Name));
-                                        WriteLine(
-                                            string.Format(
-                                                "fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = \"{0}.Item1\" }};",
-                                                formParam.Type.Name));
-                                    }
-                                    WriteLine("HttpContent content = new FormUrlEncodedContent(formKeyValuePairs);");
-                                    WriteLine("var response = await client.PutAsync(url, content).ConfigureAwait(false);");
-                                }
-                                else
-                                {
-                                    WriteLine(
-                                        "var response = await client.PutAsync(url, new StringContent(string.Empty)).ConfigureAwait(false);");
-                                }
-
+                                Process(operationDef, "Put");
                                 break;
 
                             case "POST":
-                                var postBodyParam =
-                                    operationDef.Parameters.FirstOrDefault(i => i.ParameterIn == ParameterIn.Body);
-                                if (postBodyParam != null)
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "var response = await client.PostAsJsonAsync(url, {0}).ConfigureAwait(false);",
-                                            postBodyParam.Type.Name));
-                                }
-                                else if (operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData))
-                                {
-                                    var formData =
-                                        operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.FormData).ToList();
-                                    WriteLine("var formKeyValuePairs = new List<KeyValuePair<string, string>>();");
-                                    foreach (var formParam in formData.Where(x => x.Type.TypeName != "file"))
-                                    {
-                                        if (formParam.IsRequired == false)
-                                        {
-                                            WriteNullIfStatementOpening(formParam.Type.Name, formParam.Type.TypeName);
-                                        }
-                                        WriteLine(
-                                            string.Format(
-                                                "formKeyValuePairs.Add(new KeyValuePair<string, string>(\"{0}\", {0}));",
-                                                formParam.Type.Name));
-                                        if (formParam.IsRequired == false)
-                                        {
-                                            WriteLine("}");
-                                        }
-                                    }
-                                    foreach (var formParam in formData.Where(x => x.Type.TypeName == "file"))
-                                    {
-                                        WriteLine(
-                                            string.Format(
-                                                "var {0}Content = new ByteArrayContent({0}.Item2);",
-                                                formParam.Type.Name));
-                                        WriteLine(
-                                            string.Format(
-                                                "{0}Content.Headers.ContentDisposition = new ContentDispositionHeaderValue(\"attachment\") {{ FileName = {0}.Item1 }};",
-                                                formParam.Type.Name));
-                                    }
-                                    WriteLine("HttpContent content = new FormUrlEncodedContent(formKeyValuePairs);");
-                                    WriteLine("var response = await client.PostAsync(url, content).ConfigureAwait(false);");
-                                }
-                                else
-                                {
-                                    WriteLine(
-                                        "var response = await client.PostAsync(url, new StringContent(string.Empty)).ConfigureAwait(false);");
-                                }
+                                Process(operationDef, "Post");
 
                                 break;
                         }
@@ -511,7 +385,15 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     operationDef.ReturnType));
                             WriteLine("}");
                         }
-                        WriteLine("return output;");
+                        WriteLine("if (output.Exception != null)");
+                        WriteLine("{");
+                        WriteLine("throw output.Exception;");
+                        WriteLine("}");
+                        if (string.IsNullOrWhiteSpace(operationDef.ReturnType) == false)
+                        {
+                            WriteLine("return output.Body;");
+                        }
+                        WriteLine();
                         WriteLine("}"); // close up the using
                         WriteLine("}"); // close up the method
                         WriteLine();
@@ -575,6 +457,96 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 // close namespace def
                 WriteLine("}");
                 File.WriteAllText(proxyOutputFile, FileText.ToString());
+            }
+        }
+
+        private static void Process(Operation operationDef, string httpMethod)
+        {
+            Func<Parameter, bool> isFilePredicate = x => x.Type.TypeName == "file";
+            Func<Parameter, bool> notFilePredicate = x => x.Type.TypeName != "file";
+
+            var putBodyParam = operationDef.Parameters
+                .FirstOrDefault(i => i.ParameterIn == ParameterIn.Body);
+            if (putBodyParam != null)
+            {
+                WriteLine(
+                    string.Format(
+                        "var response = await client.{1}AsJsonAsync(url, {0}).ConfigureAwait(false);",
+                        putBodyParam.Type.Name, httpMethod));
+            }
+            else if (operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData))
+            {
+                var formData = operationDef.Parameters
+                    .Where(i => i.ParameterIn == ParameterIn.FormData)
+                    .ToList();
+
+                var hasFormContent = formData.Any(notFilePredicate);
+                if (hasFormContent)
+                {
+                    WriteLine("var formKeyValuePairs = new List<KeyValuePair<string, string>>();");
+                    foreach (var formParam in formData.Where(notFilePredicate))
+                    {
+                        if (formParam.IsRequired == false)
+                        {
+                            WriteNullIfStatementOpening(formParam.Type.Name, formParam.Type.TypeName);
+                        }
+                        WriteLine(
+                            string.Format(
+                                "formKeyValuePairs.Add(new KeyValuePair<string, string>(\"{0}\", {0}));",
+                                formParam.Type.Name));
+                        if (formParam.IsRequired == false)
+                        {
+                            WriteLine("}");
+                        }
+                    }
+                }
+
+                var hasFile = formData.Any(isFilePredicate);
+                if (hasFile)
+                {
+                    // TODO: support multiple files properly
+                    foreach (var formParam in formData.Where(isFilePredicate))
+                    {
+                        WriteLine(
+                            string.Format(
+                                "var fileContent = new ByteArrayContent({0}.Item2);",
+                                formParam.Type.Name));
+                        WriteLine(
+                            string.Format(
+                                "fileContent.Headers.ContentDisposition.FileName = {0}.Item1;",
+                                formParam.Type.Name));
+                    }
+                }
+                WriteLine("HttpResponseMessage response;");
+                if (hasFile)
+                {
+                    WriteLine(
+                        "using (var content = new MultipartFormDataContent(\"---------------------------\" + DateTime.Now.ToString()))");
+                    WriteLine("{");
+                    WriteLine("content.Add(fileContent, \"file\");");
+                    if (hasFormContent)
+                    {
+                        WriteLine("using (var formUrlEncodedContent = new FormUrlEncodedContent(formKeyValuePairs))");
+                        WriteLine("{");
+                        WriteLine("content.Add(new FormUrlEncodedContent(formUrlEncodedContent));");
+                        WriteLine("}");
+                    }
+                }
+                else
+                {
+                    WriteLine("var content = new FormUrlEncodedContent(formKeyValuePairs);");
+                }
+
+                WriteLine(string.Format("response = await client.{0}Async(url, content).ConfigureAwait(false);", httpMethod));
+                if (hasFile)
+                {
+                    WriteLine("}");
+                }
+            }
+            else
+            {
+                WriteLine(
+                    string.Format("var response = await client.{0}Async(url, new StringContent(string.Empty)).ConfigureAwait(false);", httpMethod));
             }
         }
 
@@ -797,7 +769,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 : proxyGeneratorNameSpace;
 
             WriteLine("// This file was generated by Birch.Swagger.ProxyGenerator");
-            WriteLine();
             WriteLine("using System;");
             WriteLine("using System.Collections.Generic;");
             WriteLine("using System.Diagnostics;");
