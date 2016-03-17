@@ -528,7 +528,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     {
                         WriteLine("using (var formUrlEncodedContent = new FormUrlEncodedContent(formKeyValuePairs))");
                         WriteLine("{");
-                        WriteLine("content.Add(new FormUrlEncodedContent(formUrlEncodedContent));");
+                        WriteLine("content.Add(formUrlEncodedContent);");
                         WriteLine("}");
                     }
                 }
