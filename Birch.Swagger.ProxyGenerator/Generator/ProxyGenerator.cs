@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -17,6 +18,7 @@ using Newtonsoft.Json;
 
 namespace Birch.Swagger.ProxyGenerator.Generator
 {
+    [SuppressMessage("ReSharper", "UseStringInterpolation")]
     internal static class ProxyGenerator
     {
         private static StringBuilder FileText { get; set; }
@@ -25,7 +27,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl, string proxyGeneratorNamespace)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -47,11 +49,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile);
+            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace);
 
         }
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer, string proxyGeneratorNamespace)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -70,17 +72,17 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile);
+            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace);
         }
 
-        private static void ProcessSwaggerDocuments(string proxyOutputFile)
+        private static void ProcessSwaggerDocuments(string proxyOutputFile, string proxyGeneratorNamespace)
         {
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
 
             // TODO: allow custom namespace later
-            PrintHeaders(string.Empty);
-            AddBaseProxyAndClasses(string.Empty);
+            PrintHeaders(proxyGeneratorNamespace);
+            AddBaseProxyAndClasses(proxyGeneratorNamespace);
 
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
@@ -115,15 +117,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                             ? string.Empty
                             : string.Format("<{0}>", operationDef.ReturnType);
-                        var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
-
-                        List<Enum> proxyParamEnums = new List<Enum>();
-                        foreach (var enumParam in enums)
-                        {
-                            enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
-                            proxyParamEnums.Add(
-                                new Enum() { Name = enumParam.Type.TypeName, Values = enumParam.Type.EnumValues });
-                        }
 
                         var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
                         string parameters = string.Join(
@@ -208,14 +201,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                         WriteLine("/// <summary>");
                         var summary = (SecurityElement.Escape(operationDef.Description) ?? "").Replace("\n", "\n///");
-                        if (string.IsNullOrWhiteSpace(summary))
-                        {
-                            WriteLine("///");
-                        }
-                        else
-                        {
-                            WriteLine(string.Format("/// {0}", summary));
-                        }
+                        WriteLine(string.IsNullOrWhiteSpace(summary) ? "///" : string.Format("/// {0}", summary));
                         WriteLine("/// </summary>");
                         foreach (var parameter in operationDef.Parameters)
                         {
@@ -234,14 +220,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 parameters));
                         WriteLine("{");
 
-                        if (operationDef.Path.StartsWith("/"))
-                        {
-                            WriteLine(string.Format("var url = \"{0}\"", operationDef.Path.Substring(1)));
-                        }
-                        else
-                        {
-                            WriteLine(string.Format("var url = \"{0}\"", operationDef.Path));
-                        }
+                        WriteLine(operationDef.Path.StartsWith("/")
+                            ? string.Format("var url = \"{0}\"", operationDef.Path.Substring(1))
+                            : string.Format("var url = \"{0}\"", operationDef.Path));
 
                         foreach (var parameter in operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Path))
                         {
@@ -782,14 +763,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         static void WriteNullIfStatementOpening(string parameterName, string typeName)
         {
-            if (IsIntrinsicType(typeName))
-            {
-                WriteLine(string.Format("if ({0}.HasValue){{", parameterName));
-            }
-            else
-            {
-                WriteLine(string.Format("if ({0} != null){{", parameterName));
-            }
+            WriteLine(IsIntrinsicType(typeName)
+                ? string.Format("if ({0}.HasValue){{", parameterName)
+                : string.Format("if ({0} != null){{", parameterName));
         }
 
         static bool IsIntrinsicType(string typeName)
@@ -812,7 +788,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         {
             using (var settingStream = File.OpenRead(path))
             {
-                StreamReader streamReader = new StreamReader(settingStream);
+                var streamReader = new StreamReader(settingStream);
                 var value = streamReader.ReadToEnd();
                 return JsonConvert.DeserializeObject<SwaggerApiProxySettings>(value);
             }

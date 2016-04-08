@@ -1,28 +1,29 @@
-﻿    {
-    "BaseUrl": "http://mydomain.com",
-    "WebApiAssembly": "bin\\MyDomain.WebApi.dll",
-    "WebApiConfig": "web.config",
-    "ProxyOutputFile": "SwaggerProxy.cs",
-    "EndPoints": [
-        {
-            "Id": "MyDomainCoreWebProxy",
-            "Url": "http://mydomain.com/swagger/docs/core",
-            "Namespace": "MyDomain.Core.WebProxy",
-            "Suffix": "WebProxy",
-            "BaseProxyClass": "", // allows you to override the BaseProxy, Your proxy should inherit from the base proxy.
-            "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
-            "ParseOperationIdForProxyName": "true",
-            "AppendAsyncToMethodName": "true"
-        },
-        {
-            "Id": "MyDomainCoreWebProxy-v2",
-            "Url": "http://mydomain.com/swagger/docs/core-v2",
-            "Namespace": "MyDomain.Core.v2.WebProxy",
-            "Suffix": "WebProxy",
-            "BaseProxyClass": "Birch.Swagger.ProxyGenerator.BaseProxy",
-            "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
-            "ParseOperationIdForProxyName": "true",
-            "AppendAsyncToMethodName": "true"
-        }
-    ]
+﻿{
+  "BaseUrl": "http://mydomain.com",
+  "WebApiAssembly": "bin\\MyDomain.WebApi.dll",
+  "WebApiConfig": "web.config",
+  "ProxyOutputFile": "SwaggerProxy.cs",
+  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator",
+  "EndPoints": [
+    {
+      "Id": "MyDomainCoreWebProxy",
+      "Url": "http://mydomain.com/swagger/docs/core",
+      "Namespace": "MyDomain.Core.WebProxy",
+      "Suffix": "WebProxy",
+      "BaseProxyClass": "", // allows you to override the BaseProxy, Your proxy should inherit from the base proxy.
+      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
+      "ParseOperationIdForProxyName": "true",
+      "AppendAsyncToMethodName": "true"
+    },
+    {
+      "Id": "MyDomainCoreWebProxy-v2",
+      "Url": "http://mydomain.com/swagger/docs/core-v2",
+      "Namespace": "MyDomain.Core.v2.WebProxy",
+      "Suffix": "WebProxy",
+      "BaseProxyClass": "Birch.Swagger.ProxyGenerator.BaseProxy",
+      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
+      "ParseOperationIdForProxyName": "true",
+      "AppendAsyncToMethodName": "true"
+    }
+  ]
 }

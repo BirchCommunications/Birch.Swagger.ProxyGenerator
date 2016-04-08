@@ -29,43 +29,53 @@ namespace Birch.Swagger.ProxyGenerator
                 var assemblyFile = string.Empty;
                 var proxyOutputFile = string.Empty;
                 var baseUrl = string.Empty;
+
                 // base directory is exe directory unless switch override
                 string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
-                    .Replace(@"file:\", string.Empty);
-
+                    ?.Replace(@"file:\", string.Empty);
+                
                 // check for switch values
                 if (args.Any())
                 {
-                    for (int i = 0; i < args.Count(); i++)
+                    for (int i = 0; i < args.Length; i++)
                     {
-                        switch (args[i].ToLower())
+                        var argument = args[i].ToLower();
+
+                        if (argument == "-settingsfile")
                         {
-                            case "-settingsfile":
-                                settingsFile = args[i + 1];
-                                break;
-                            case "-webapiassembly":
-                                assemblyFile = args[i + 1];
-                                break;
-                            case "-webapiconfig":
-                                appConfigFile = args[i + 1];
-                                break;
-                            case "-proxyoutputfile":
-                                proxyOutputFile = args[i + 1];
-                                break;
-                            case "-baseurl":
-                                baseUrl = args[i + 1];
-                                break;
-                            case "-basedirectory":
-                                baseDirectory = args[i + 1];
-                                break;
+                            settingsFile = args[i + 1];
+                        }
+                        else if (argument == "-webapiassembly")
+                        {
+                            assemblyFile = args[i + 1];
+                        }
+                        else if (argument == "-webapiconfig")
+                        {
+                            appConfigFile = args[i + 1];
+                        }
+                        else if (argument == "-proxyoutputfile")
+                        {
+                            proxyOutputFile = args[i + 1];
+                        }
+                        else if (argument == "-baseurl")
+                        {
+                            baseUrl = args[i + 1];
+                        }
+                        else if (argument == "-basedirectory")
+                        {
+                            baseDirectory = args[i + 1];
                         }
                     }
                 }
 
                 // Load Proxy Generator Settings
                 Console.WriteLine("Loading settings... \n{0}", settingsFile);
-                Console.WriteLine("Base Path: {0}", baseDirectory);
-
+                if (baseDirectory == null)
+                {
+                    Console.WriteLine("Could not determine base directory,");
+                    return ExitApplication(1);
+                }
+                Console.WriteLine("Base Directory: {0}", baseDirectory);
                 var combine = Path.Combine(baseDirectory, "Birch.Swagger.ProxyGenerator.config.json");
                 if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
                 {
@@ -79,12 +89,7 @@ namespace Birch.Swagger.ProxyGenerator
                         + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
                     Console.WriteLine();
                     Console.WriteLine("Exiting Proxy Generator.");
-                    if (Debugger.IsAttached)
-                    {
-                        Console.WriteLine("Press any key to continue...");
-                        Console.ReadKey();
-                    }
-                    return 1;
+                    return ExitApplication(1);
                 }
 
                 var settings = Generator.ProxyGenerator.GetSettings(settingsFile);
@@ -115,7 +120,7 @@ namespace Birch.Swagger.ProxyGenerator
                     Console.WriteLine("No baseUrl or path to the WebApi assembly file provided, nothing to process.");
                     Console.WriteLine();
                     Console.WriteLine("Exiting Proxy Generator.");
-                    return 1;
+                    return ExitApplication(1);
                 }
 
 
@@ -133,15 +138,15 @@ namespace Birch.Swagger.ProxyGenerator
                 // Run generator against provided assmbly file or baseUrl
                 if (!string.IsNullOrWhiteSpace(assemblyFile))
                 {
-                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints);
+                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints, settings.ProxyGeneratorNamespace);
                     if (processInMemoryStatus != 0)
                     {
-                        return processInMemoryStatus;
+                        return ExitApplication(processInMemoryStatus);
                     }
                 }
                 else
                 {
-                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl);
+                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl, settings.ProxyGeneratorNamespace);
                 }
 
                 // All done
@@ -149,48 +154,45 @@ namespace Birch.Swagger.ProxyGenerator
                 Console.WriteLine();
                 Console.WriteLine("----------------------------------------------------");
                 Console.WriteLine("Proxy generation completed....");
-                Console.WriteLine("Time Taken: {0}", appStopwatch.Elapsed.ToString());
+                Console.WriteLine("Time Taken: {0}", appStopwatch.Elapsed);
                 Console.WriteLine();
-                if (Debugger.IsAttached)
-                {
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();
-                }
-                return 0;
+                return ExitApplication(0);
             }
             catch (AggregateException aex)
             {
                 foreach (Exception ex in aex.InnerExceptions)
                 {
-                    Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType().ToString());
+                    Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
                     Console.WriteLine("StackTrace: {0}", ex.StackTrace);
                     Console.WriteLine();
                 }
 
                 Console.WriteLine("Exiting Proxy Generator.");
-                if (Debugger.IsAttached)
-                {
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();
-                }
-                return 1;
+                return ExitApplication(1);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType().ToString());
+                Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
                 Console.WriteLine("StackTrace: {0}", ex.StackTrace);
                 Console.WriteLine();
                 Console.WriteLine("Exiting Proxy Generator.");
-                if (Debugger.IsAttached)
-                {
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();
-                }
-                return 1;
+                return ExitApplication(1);
             }
         }
 
-        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints)
+        private static int ExitApplication(int exitCode)
+        {
+            if (!Debugger.IsAttached)
+            {
+                return exitCode;
+            }
+
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey();
+            return exitCode;
+        }
+
+        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string proxyGeneratorNamespace)
         {
             string exeBinDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
                                          .Replace(@"file:\", string.Empty) + @"\bin";
@@ -220,53 +222,53 @@ namespace Birch.Swagger.ProxyGenerator
 
             Console.WriteLine("Loading Owin Web API Assembly... \n{0}", assemblyFile);
             Console.WriteLine();
-            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler((source, e) => CustomResolver(source, e, assemblyFile));
+            AppDomain.CurrentDomain.AssemblyResolve += 
+                (source, e) => CustomResolver(source, e, assemblyFile);
             var assembly = Assembly.LoadFrom(assemblyFile);
 
-            Type owinStartupClassType = null;
-            var startupAttribute = assembly.CustomAttributes.FirstOrDefault(x => x.AttributeType == typeof(OwinStartupAttribute));
-            Console.WriteLine("Locating Startup Class... \n{0}", startupAttribute.ConstructorArguments.First().Value.ToString());
-            Console.WriteLine();
-
+            var startupAttribute = assembly.CustomAttributes
+                .FirstOrDefault(x => x.AttributeType == typeof(OwinStartupAttribute));
             if (startupAttribute == null)
             {
-                Console.WriteLine("Could not located OwinStartupAttribute.");
+                Console.WriteLine("Could not locate OWIN startup class.");
                 return 1;
             }
 
             Console.WriteLine("Starting in memory server...");
             Console.WriteLine();
-            owinStartupClassType = (Type)startupAttribute.ConstructorArguments.First().Value;
+            var owinStartupClassType = (Type)startupAttribute.ConstructorArguments.First().Value;
             dynamic owinStartupClass = Activator.CreateInstance(owinStartupClassType);
-            TestServer testServer = TestServer.Create(builder => { owinStartupClass.Configuration(builder); });
+            var testServer = TestServer.Create(builder => { owinStartupClass.Configuration(builder); });
 
             Console.WriteLine("Generating Proxy...");
-            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer);
+            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, proxyGeneratorNamespace);
             return 0;
         }
 
         // ReSharper disable once UnusedParameter.Local
         static Assembly CustomResolver(object source, ResolveEventArgs e, string assemblyFile)
         {
-            var name = string.Format("{0}.dll", e.Name.Split(',')[0]);
+            var name = $"{e.Name.Split(',')[0]}.dll";
             var searchPath = string.Format("{1}\\{0}", name, Path.GetDirectoryName(assemblyFile));
             Console.WriteLine("Resolving {0}", e.Name);
-            Assembly assembly = Assembly.LoadFrom(searchPath);
+            var assembly = Assembly.LoadFrom(searchPath);
             return assembly;
         }
 
         private static void ResetConfigMechanism()
         {
-            typeof(ConfigurationManager).GetField("s_initState", BindingFlags.NonPublic | BindingFlags.Static)
-                .SetValue(null, 0);
+            typeof(ConfigurationManager)
+                .GetField("s_initState", BindingFlags.NonPublic | BindingFlags.Static)
+                ?.SetValue(null, 0);
 
-            typeof(ConfigurationManager).GetField("s_configSystem", BindingFlags.NonPublic | BindingFlags.Static)
-                .SetValue(null, null);
+            typeof(ConfigurationManager)
+                .GetField("s_configSystem", BindingFlags.NonPublic | BindingFlags.Static)
+                ?.SetValue(null, null);
 
             typeof(ConfigurationManager).Assembly.GetTypes()
                 .First(x => x.FullName == "System.Configuration.ClientConfigPaths")
                 .GetField("s_current", BindingFlags.NonPublic | BindingFlags.Static)
-                .SetValue(null, null);
+                ?.SetValue(null, null);
         }
     }
 }
