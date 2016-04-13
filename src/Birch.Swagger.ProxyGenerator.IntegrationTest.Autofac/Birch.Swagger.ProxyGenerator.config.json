@@ -1,0 +1,19 @@
+﻿{
+  "BaseUrl": "http://petstore.swagger.io/",
+  //"WebApiAssembly": "bin\\MyDomain.WebApi.dll",
+  "WebApiConfig": "web.config",
+  "ProxyOutputFile": "SwaggerProxy.cs",
+  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator",
+  "EndPoints": [
+    {
+      "Id": "SwaggerPetStore",
+      "Url": "/v2/swagger.json",
+      "Namespace": "Birch.Swagger.Petstore.ProxyGenerator.WebProxy",
+      "Suffix": "WebProxy",
+      "BaseProxyClass": "", // allows you to override the BaseProxy, Your proxy should inherit from the base proxy.
+      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
+      "ParseOperationIdForProxyName": "true",
+      "AppendAsyncToMethodName": "true"
+    }
+  ]
+}
