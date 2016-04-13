@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <iconUrl>https://avatars1.githubusercontent.com/u/12667415</iconUrl>
+    <id>Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit</id>
+    <version>$version$</version>
+    <title>Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit</title>
+    <description>Adds default logging to xunit test output window and provides AutoRollbackAttribute.</description>
+    <authors>Birch</authors>
+    <owners>Birch</owners>
+    <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2016 Birch</copyright>
+    <dependencies>
+      <dependency id="Birch.Swagger.ProxyGenerator.IntegrationTest" version="$version$" />
+      <package id="xunit.abstractions" version="2.0.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\src\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit\bin\release\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.dll" target="lib\net45\" />
+  </files>
+</package>

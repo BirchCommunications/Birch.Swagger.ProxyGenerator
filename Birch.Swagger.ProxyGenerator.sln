@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Birch.Swagger.ProxyGenerator", "Birch.Swagger.ProxyGenerator\Birch.Swagger.ProxyGenerator.csproj", "{473BDC2B-42FD-4490-9DF3-CECB8BB3433C}"
 EndProject
@@ -16,6 +16,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{F18F1CAC
 		Readme.md = Readme.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Birch.Swagger.ProxyGenerator.IntegrationTest", "src\Birch.Swagger.ProxyGenerator.IntegrationTest\Birch.Swagger.ProxyGenerator.IntegrationTest.csproj", "{A5627DBA-48C0-43B9-824D-495FF9743D7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac", "src\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.csproj", "{EA6F05CB-A61C-42B7-9957-CFD46D494517}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit", "src\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.csproj", "{2A8B29E3-CB35-472F-B820-EEF8BA776275}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog", "src\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.csproj", "{C3FF0A1B-8E52-482D-BEC5-8A32D13B49D3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTest", "IntegrationTest", "{5639C42F-F77A-4CD5-BFDC-9ED692F0C884}"
+	ProjectSection(SolutionItems) = preProject
+		build\Birch.Swagger.ProxyGenerator.IntegrationTest.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.nuspec
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{CF25A733-5784-4F79-89C3-5197E1C642F7}"
+	ProjectSection(SolutionItems) = preProject
+		build\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.nuspec
+		build\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.nuspec
+		build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,8 +46,28 @@ Global
 		{473BDC2B-42FD-4490-9DF3-CECB8BB3433C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{473BDC2B-42FD-4490-9DF3-CECB8BB3433C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{473BDC2B-42FD-4490-9DF3-CECB8BB3433C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5627DBA-48C0-43B9-824D-495FF9743D7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5627DBA-48C0-43B9-824D-495FF9743D7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5627DBA-48C0-43B9-824D-495FF9743D7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5627DBA-48C0-43B9-824D-495FF9743D7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA6F05CB-A61C-42B7-9957-CFD46D494517}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA6F05CB-A61C-42B7-9957-CFD46D494517}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA6F05CB-A61C-42B7-9957-CFD46D494517}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA6F05CB-A61C-42B7-9957-CFD46D494517}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A8B29E3-CB35-472F-B820-EEF8BA776275}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A8B29E3-CB35-472F-B820-EEF8BA776275}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A8B29E3-CB35-472F-B820-EEF8BA776275}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A8B29E3-CB35-472F-B820-EEF8BA776275}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3FF0A1B-8E52-482D-BEC5-8A32D13B49D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3FF0A1B-8E52-482D-BEC5-8A32D13B49D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3FF0A1B-8E52-482D-BEC5-8A32D13B49D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3FF0A1B-8E52-482D-BEC5-8A32D13B49D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5639C42F-F77A-4CD5-BFDC-9ED692F0C884} = {F18F1CAC-1BE7-416A-9E52-626AA6FFA4C8}
+		{CF25A733-5784-4F79-89C3-5197E1C642F7} = {5639C42F-F77A-4CD5-BFDC-9ED692F0C884}
 	EndGlobalSection
 EndGlobal
