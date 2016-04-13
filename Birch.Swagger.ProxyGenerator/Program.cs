@@ -107,9 +107,12 @@ namespace Birch.Swagger.ProxyGenerator
                 appConfigFile = Path.IsPathRooted(appConfigFile)
                                     ? appConfigFile
                                     : Path.GetFullPath(Path.Combine(baseDirectory, appConfigFile));
-                assemblyFile = Path.IsPathRooted(assemblyFile)
-                                   ? assemblyFile
-                                   : Path.GetFullPath(Path.Combine(baseDirectory, assemblyFile));
+                if (!string.IsNullOrWhiteSpace(assemblyFile))
+                {
+                    assemblyFile = Path.IsPathRooted(assemblyFile)
+                        ? assemblyFile
+                        : Path.GetFullPath(Path.Combine(baseDirectory, assemblyFile));
+                }
                 proxyOutputFile = Path.IsPathRooted(proxyOutputFile)
                                       ? proxyOutputFile
                                       : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
@@ -194,8 +197,8 @@ namespace Birch.Swagger.ProxyGenerator
 
         private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string proxyGeneratorNamespace)
         {
-            string exeBinDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
-                                         .Replace(@"file:\", string.Empty) + @"\bin";
+            var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            var exeBinDirectory = directoryName?.Replace(@"file:\", string.Empty) + @"\bin";
 
             Console.WriteLine("Copying assembly xml comments to executable bin directory... \n{0}", exeBinDirectory);
             Console.WriteLine();

@@ -1,6 +1,6 @@
 ﻿{
   "BaseUrl": "http://petstore.swagger.io/",
-  //"WebApiAssembly": "bin\\MyDomain.WebApi.dll",
+  "WebApiAssembly": "",
   "WebApiConfig": "web.config",
   "ProxyOutputFile": "SwaggerProxy.cs",
   "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator",
