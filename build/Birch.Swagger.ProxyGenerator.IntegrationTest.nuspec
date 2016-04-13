@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <iconUrl>https://avatars1.githubusercontent.com/u/12667415</iconUrl>
+    <id>Birch.Swagger.ProxyGenerator.IntegrationTest</id>
+    <version>$version$</version>
+    <title>Birch.Swagger.ProxyGenerator.IntegrationTest</title>
+    <description>Adds helper base classes and extensions methods for testing the generated web proxy</description>
+    <authors>Birch</authors>
+    <owners>Birch</owners>
+    <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2016 Birch</copyright>
+    <dependencies>
+      <dependency id="Birch.Swagger.ProxyGenerator" version="1.0.37" />
+      <dependency id="Microsoft.Owin.Testing" version="3.0.1" />
+      <dependency id="Shouldly" version="2.6.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\src\Birch.Swagger.ProxyGenerator.IntegrationTest\bin\release\Birch.Swagger.ProxyGenerator.IntegrationTest.dll" target="lib\net45\" />
+  </files>
+</package>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <iconUrl>https://avatars1.githubusercontent.com/u/12667415</iconUrl>
+    <id>Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac</id>
+    <version>$version$</version>
+    <title>Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac</title>
+    <description>Adds base classes and extention methods to allow fakes to be used from autofac in test server startup.</description>
+    <authors>Birch</authors>
+    <owners>Birch</owners>
+    <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2016 Birch</copyright>
+    <dependencies>
+      <dependency id="Birch.Swagger.ProxyGenerator.IntegrationTest" version="$version$" />
+      <package id="Autofac" version="3.5.2" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\src\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac\bin\release\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.dll" target="lib\net45\" />
+  </files>
+</package>

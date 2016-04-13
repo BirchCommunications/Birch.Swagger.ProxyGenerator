@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <iconUrl>https://avatars1.githubusercontent.com/u/12667415</iconUrl>
+    <id>Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog</id>
+    <version>$version$</version>
+    <title>Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog</title>
+    <description>Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog to configure a fake ILogger that can be used to output logs to Debug console (default) or handle them however you like.</description>
+    <authors>Birch</authors>
+    <owners>Birch</owners>
+    <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2016 Birch</copyright>
+    <dependencies>
+      <dependency id="Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac" version="$version$" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\src\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog\bin\release\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.dll" target="lib\net45\" />
+  </files>
+</package>

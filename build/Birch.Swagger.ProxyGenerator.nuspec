@@ -10,7 +10,7 @@
     <owners>Birch</owners>
     <projectUrl>https://github.com/BirchCommunications/Birch.Swagger.ProxyGenerator</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <copyright>Copyright 2015 Birch</copyright>
+    <copyright>Copyright 2016 Birch</copyright>
     <dependencies>
       <dependency id="Microsoft.AspNet.WebApi.Client" version="5.2.3" />
       <dependency id="Newtonsoft.Json" version="8.0.2" />
