@@ -13,7 +13,7 @@
     <copyright>Copyright 2016 Birch</copyright>
     <dependencies>
       <dependency id="Birch.Swagger.ProxyGenerator.IntegrationTest" version="$version$" />
-      <package id="xunit.abstractions" version="2.0.0" />
+      <dependency id="xunit.abstractions" version="2.0.0" />
     </dependencies>
   </metadata>
   <files>
