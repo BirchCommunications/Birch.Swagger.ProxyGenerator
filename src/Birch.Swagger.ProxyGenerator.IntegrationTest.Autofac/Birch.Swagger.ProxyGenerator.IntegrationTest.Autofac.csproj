@@ -76,7 +76,6 @@
     <Compile Include="AutofacWebProxyExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
     <None Include="Birch.Swagger.ProxyGenerator.config.json" />
     <None Include="build\Birch.Swagger.ProxyGenerator.props" />
     <None Include="packages.config" />
