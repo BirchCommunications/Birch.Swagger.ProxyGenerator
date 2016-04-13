@@ -72,7 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IAutfacWebProxy.cs" />
+    <Compile Include="IAutofacIntegrationTestWebProxy.cs" />
     <Compile Include="AutofacIntegrationTestBaseProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AutofacWebProxyExtensions.cs" />
