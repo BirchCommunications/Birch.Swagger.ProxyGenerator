@@ -1,9 +1,10 @@
 ﻿{
+  "AutoRunOnBuildDisabled": "true",
   "BaseUrl": "http://petstore.swagger.io/", // Default: http://mydomain.com
   "ProxyGeneratorClassNamePrefix": "AutofacIntegrationTest", // Default: ProxyGenerator (ProxyGeneratorBaseClass)
   "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest", // Default: Birch.Swagger.ProxyGenerator
   "ProxyOutputFile": "", // Default: SwaggerProxy.cs
   "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
   "WebApiConfig": "", // Default: web.config
-  "EndPoints": []
+  "EndPoints": [ ]
 }

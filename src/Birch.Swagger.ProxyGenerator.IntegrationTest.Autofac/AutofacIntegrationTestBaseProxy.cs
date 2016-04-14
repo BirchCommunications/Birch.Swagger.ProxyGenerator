@@ -9,8 +9,7 @@ using Owin;
 
 namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
 {
-    public class AutofacBaseIntegrationTestProxy :
-        BaseIntegrationTestWebProxy, IAutofacIntegrationTestWebProxy
+    public class AutofacBaseIntegrationTestProxy : BaseIntegrationTestWebProxy, IAutofacIntegrationTestWebProxy
     {
         public AutofacBaseIntegrationTestProxy(Uri baseUrl) : base(baseUrl)
         {
