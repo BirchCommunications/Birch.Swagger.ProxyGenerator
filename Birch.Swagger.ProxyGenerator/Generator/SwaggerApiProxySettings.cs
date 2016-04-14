@@ -2,6 +2,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 {
     public class SwaggerApiProxySettings
     {
+        public bool AutoRunOnBuildDisabled { get; set; }
         public string BaseUrl { get; set; }
         public string ProxyOutputFile { get; set; }
         public string WebApiAssembly { get; set; }
