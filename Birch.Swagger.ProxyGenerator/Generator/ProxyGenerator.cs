@@ -657,7 +657,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("public HttpResponseMessage Response { get; set; }");
             WriteLine("public TimeSpan RequestDuration { get; set; }");
             WriteLine("public Type ExpectedResponseType { get; set; }");
-            WriteLine("public T Body { get; internal set; }");
+            WriteLine("public T Body { get; set; }");
             WriteLine("public Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public class WebProxyResponse : IWebProxyResponse");
