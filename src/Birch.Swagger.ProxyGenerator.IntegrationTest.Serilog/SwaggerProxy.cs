@@ -6,38 +6,10 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Birch.Swagger.ProxyGenerator;
+using Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog;
 
-namespace Birch.Swagger.ProxyGenerator
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog
 {
-    public class WebProxyResponse<T> : IWebProxyResponse
-    {
-        public HttpResponseMessage Response { get; internal set; }
-        public TimeSpan RequestDuration { get; internal set; }
-        public Type ExpectedResponseType { get; internal set; }
-        public T Body { get; internal set; }
-        public Exception Exception { get; set; }
-    }
-    public class WebProxyResponse : IWebProxyResponse
-    {
-        public HttpResponseMessage Response { get; internal set; }
-        public TimeSpan RequestDuration { get; internal set; }
-        public Type ExpectedResponseType { get; internal set; }
-        public Exception Exception { get; set; }
-    }
-    public interface IWebProxyResponse
-    {
-        HttpResponseMessage Response { get; }
-        TimeSpan RequestDuration { get; }
-        Type ExpectedResponseType { get; }
-        Exception Exception { get; set; }
-    }
-    public class BeforeRequestActionArgs
-    {
-        public string Uri { get; set; }
-        public string ActionName { get; set; }
-        public string Method { get; set; }
-    }
     public abstract class BaseProxy
     {
         protected readonly Uri BaseUrl;
@@ -143,24 +115,49 @@ namespace Birch.Swagger.ProxyGenerator
             }
             return currentUrl;
         }
-    }
-
-    /// <summary>
-    /// Simple Http Response
-    /// </summary>
-    public class SimpleHttpResponseException : Exception
-    {
-        public HttpStatusCode StatusCode { get; private set; }
-
-        public SimpleHttpResponseException(HttpStatusCode statusCode, string content)
-        : base(content)
+        public class WebProxyResponse<T> : IWebProxyResponse
         {
-            StatusCode = statusCode;
+            public HttpResponseMessage Response { get; internal set; }
+            public TimeSpan RequestDuration { get; internal set; }
+            public Type ExpectedResponseType { get; internal set; }
+            public T Body { get; internal set; }
+            public Exception Exception { get; set; }
+        }
+        public class WebProxyResponse : IWebProxyResponse
+        {
+            public HttpResponseMessage Response { get; internal set; }
+            public TimeSpan RequestDuration { get; internal set; }
+            public Type ExpectedResponseType { get; internal set; }
+            public Exception Exception { get; set; }
+        }
+        public interface IWebProxyResponse
+        {
+            HttpResponseMessage Response { get; }
+            TimeSpan RequestDuration { get; }
+            Type ExpectedResponseType { get; }
+            Exception Exception { get; set; }
+        }
+        public class BeforeRequestActionArgs
+        {
+            public string Uri { get; set; }
+            public string ActionName { get; set; }
+            public string Method { get; set; }
+        }
+
+        public class SimpleHttpResponseException : Exception
+        {
+            public HttpStatusCode StatusCode { get; private set; }
+
+            public SimpleHttpResponseException(HttpStatusCode statusCode, string content)
+            : base(content)
+            {
+                StatusCode = statusCode;
+            }
         }
     }
 }
 // v2/swagger.json Proxy
-namespace Birch.Swagger.Petstore.ProxyGenerator.WebProxy {
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog {
     public interface IpetWebProxy
     {
         Task addPetAsync(Pet body);

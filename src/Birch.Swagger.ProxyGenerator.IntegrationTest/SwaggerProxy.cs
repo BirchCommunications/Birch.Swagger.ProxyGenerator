@@ -6,9 +6,9 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac;
+using Birch.Swagger.ProxyGenerator.IntegrationTest;
 
-namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
     public abstract class BaseProxy
     {
@@ -157,7 +157,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
     }
 }
 // v2/swagger.json Proxy
-namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac {
+namespace Birch.Swagger.Petstore.ProxyGenerator.WebProxy {
     public interface IpetWebProxy
     {
         Task addPetAsync(Pet body);

@@ -484,7 +484,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 var hasFile = formData.Any(isFilePredicate);
                 if (hasFile)
                 {
-                    // TODO: support multiple files properly
+                    // TODO: support multiple input files properly
                     foreach (var formParam in formData.Where(isFilePredicate))
                     {
                         WriteLine(
