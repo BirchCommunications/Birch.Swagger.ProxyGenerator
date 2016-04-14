@@ -17,10 +17,10 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             var infoToken = jObject["info"];
             proxyDefinition.Title = infoToken["title"].ToString();
             var descriptionToken = infoToken["description"];
-            proxyDefinition.Description = descriptionToken != null ? descriptionToken.ToString() : null;
+            proxyDefinition.Description = descriptionToken?.ToString();
 
-            this.ParsePaths(jObject, proxyDefinition, parseOperationIdForProxyName);
-            this.ParseDefinitions(jObject, proxyDefinition);
+            ParsePaths(jObject, proxyDefinition, parseOperationIdForProxyName);
+            ParseDefinitions(jObject, proxyDefinition);
 
             return proxyDefinition;
         }
@@ -69,7 +69,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                     if (schema != null)
                     {
                         bool dummyNullable;
-                        returnType = this.GetTypeName(schema, out dummyNullable);
+                        returnType = GetTypeName(schema, out dummyNullable);
                         if (returnType != null && returnType.Equals("Void"))
                             returnType = null;
                     }
@@ -268,13 +268,13 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             if (refType != null)
             {
                 isNullable = false;
-                return FixTypeName(this.ParseRef(refType.Value.ToString()));
+                return FixTypeName(ParseRef(refType.Value.ToString()));
             }
 
             var schema = token["schema"];
             if (schema != null)
             {
-                return FixTypeName(this.GetTypeName(schema, out isNullable));
+                return FixTypeName(GetTypeName(schema, out isNullable));
             }
 
             var type = token["type"] as JValue;
@@ -295,7 +295,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 isNullable = false;
                 var jToken = token["items"];
                 bool throwawayNullable; // we don't care what the underlying
-                return string.Format("List<{0}>", this.GetTypeName(jToken, out throwawayNullable));
+                return $"List<{GetTypeName(jToken, out throwawayNullable)}>";
             }
             if (type.Value.Equals("boolean"))
             {
@@ -386,7 +386,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
 
             //var csharpCodeProvider = new CSharpCodeProvider();
             var output = input.Replace(" ", "");
-            output = SwaggerParser.FixGenericName(output);
+            output = FixGenericName(output);
 
             if (char.IsLetter(output[0]) == false)
                 output = "_" + output;

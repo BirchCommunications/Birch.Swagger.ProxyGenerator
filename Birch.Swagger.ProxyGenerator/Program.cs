@@ -96,13 +96,35 @@ namespace Birch.Swagger.ProxyGenerator
                 var endpoints = settings.EndPoints;
 
                 // only pull value from config file if not set by switch
-                appConfigFile = string.IsNullOrWhiteSpace(appConfigFile) ? settings.WebApiConfig : appConfigFile;
+                // use default value if nothing provided.
                 assemblyFile = string.IsNullOrWhiteSpace(assemblyFile) ? settings.WebApiAssembly : assemblyFile;
-                proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile)
-                                      ? settings.ProxyOutputFile
-                                      : proxyOutputFile;
-                baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? settings.BaseUrl : baseUrl;
 
+                appConfigFile = string.IsNullOrWhiteSpace(appConfigFile)
+                    ? settings.WebApiConfig
+                    : appConfigFile;
+                appConfigFile = string.IsNullOrWhiteSpace(appConfigFile)
+                    ? "web.config"
+                    : appConfigFile;
+
+                proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile)
+                    ? settings.ProxyOutputFile
+                    : proxyOutputFile;
+                proxyOutputFile = string.IsNullOrWhiteSpace(proxyOutputFile)
+                    ? "SwaggerProxy.cs"
+                    : proxyOutputFile;
+
+                var proxyGeneratorNamespace = string.IsNullOrWhiteSpace(settings.ProxyGeneratorNamespace)
+                    ? "Birch.Swagger.ProxyGenerator"
+                    : settings.ProxyGeneratorNamespace;
+
+                var proxyGeneratorClassNamePrefix = string.IsNullOrWhiteSpace(settings.ProxyGeneratorClassNamePrefix)
+                    ? "ProxyGenerator"
+                    : settings.ProxyGeneratorClassNamePrefix;
+
+                baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? settings.BaseUrl : baseUrl;
+                baseUrl = string.IsNullOrWhiteSpace(baseUrl)
+                    ? "http://mydomain.com/"
+                    : baseUrl;
                 // allow relative paths
                 appConfigFile = Path.IsPathRooted(appConfigFile)
                                     ? appConfigFile
@@ -139,9 +161,10 @@ namespace Birch.Swagger.ProxyGenerator
                 Console.WriteLine();
 
                 // Run generator against provided assmbly file or baseUrl
+                
                 if (!string.IsNullOrWhiteSpace(assemblyFile))
                 {
-                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints, settings.ProxyGeneratorNamespace);
+                    var processInMemoryStatus = ProcessInMemory(assemblyFile, appConfigFile, proxyOutputFile, endpoints, proxyGeneratorNamespace, baseUrl, proxyGeneratorClassNamePrefix);
                     if (processInMemoryStatus != 0)
                     {
                         return ExitApplication(processInMemoryStatus);
@@ -149,7 +172,7 @@ namespace Birch.Swagger.ProxyGenerator
                 }
                 else
                 {
-                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl, settings.ProxyGeneratorNamespace);
+                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
                 }
 
                 // All done
@@ -195,7 +218,7 @@ namespace Birch.Swagger.ProxyGenerator
             return exitCode;
         }
 
-        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string proxyGeneratorNamespace)
+        private static int ProcessInMemory(string assemblyFile, string appConfigFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string proxyGeneratorNamespace, string baseUrl, string proxyGeneratorClassNamePrefix)
         {
             var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
             var exeBinDirectory = directoryName?.Replace(@"file:\", string.Empty) + @"\bin";
@@ -244,7 +267,7 @@ namespace Birch.Swagger.ProxyGenerator
             var testServer = TestServer.Create(builder => { owinStartupClass.Configuration(builder); });
 
             Console.WriteLine("Generating Proxy...");
-            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, proxyGeneratorNamespace);
+            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, proxyGeneratorNamespace, baseUrl, proxyGeneratorClassNamePrefix);
             return 0;
         }
 

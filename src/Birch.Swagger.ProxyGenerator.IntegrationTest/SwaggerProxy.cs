@@ -157,7 +157,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
     }
 }
 // v2/swagger.json Proxy
-namespace Birch.Swagger.Petstore.ProxyGenerator.WebProxy {
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest {
     public interface IpetWebProxy
     {
         Task addPetAsync(Pet body);

@@ -27,7 +27,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl, string proxyGeneratorNamespace)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl, string proxyGeneratorNamespace, string proxyGeneratorClassNamePrefix)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -49,11 +49,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace);
-
+            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
         }
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer, string proxyGeneratorNamespace)
+        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer, string proxyGeneratorNamespace, string baseUrl, string proxyGeneratorClassNamePrefix)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -64,24 +63,27 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             List<Task> taskList = new List<Task>();
             foreach (var endPoint in endpoints)
             {
+                endPoint.Url = endPoint.Url.StartsWith(baseUrl)
+                                     ? endPoint.Url
+                                     : string.Format("{0}{1}", baseUrl, endPoint.Url);
                 Console.WriteLine("Requested: {0}", endPoint.Url);
-                taskList.Add(GetEndpointSwaggerDoc(testServer, endPoint));
+                taskList.Add(GetEndpointSwaggerDoc(testServer, endPoint, baseUrl));
             }
 
             Console.WriteLine();
             Console.WriteLine("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace);
+            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
         }
 
-        private static void ProcessSwaggerDocuments(string proxyOutputFile, string proxyGeneratorNamespace)
+        private static void ProcessSwaggerDocuments(string proxyOutputFile, string proxyGeneratorNamespace, string proxyGeneratorClassNamePrefix)
         {
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
 
             PrintHeaders(proxyGeneratorNamespace);
-            AddBaseProxyAndClasses(proxyGeneratorNamespace);
+            AddBaseProxyAndClasses(proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
 
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
@@ -98,8 +100,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 var result = swaggerDocDictionaryEntry.Value;
                 var parser = new SwaggerParser();
                 var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
+                var namespaceSuffix = string.IsNullOrWhiteSpace(endPoint.Namespace)
+                    ? endPoint.Id
+                    : endPoint.Namespace;
+                var endpointNamespace = string.Format("{0}.{1}", proxyGeneratorNamespace, namespaceSuffix);
 
-                WriteLine(string.Format("namespace {0} {{", endPoint.Namespace));
+                WriteLine(string.Format("namespace {0} {{", endpointNamespace));
 
                 // Interfaces
                 var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
@@ -125,7 +131,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                     x =>
                                     {
                                         // if parameter is enum include the namespace
-                                        string parameter = x.Type.EnumValues != null ? string.Format("{0}.{1}.", endPoint.Namespace, className) : string.Empty;
+                                        string parameter = x.Type.EnumValues != null ? string.Format("{0}.{1}.", endpointNamespace, className) : string.Empty;
                                         parameter += x.IsRequired == false
                                             ? string.Format(
                                                 "{0} {1} = {3}{2}",
@@ -148,6 +154,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 }
                 foreach (var proxy in proxies)
                 {
+                    var baseProxyName = proxyGeneratorClassNamePrefix + "BaseProxy";
+
                     // start class defintion
                     WriteLine("/// <summary>");
                     WriteLine(string.Format("/// Web Proxy for {0}", proxy));
@@ -157,7 +165,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         string.Format(
                             "public class {0} : {1}, I{0}",
                             className,
-                            string.IsNullOrWhiteSpace(endPoint.BaseProxyClass) ? "BaseProxy" : endPoint.BaseProxyClass));
+                            string.IsNullOrWhiteSpace(endPoint.BaseProxyClass) ? baseProxyName : endPoint.BaseProxyClass));
                     WriteLine("{");
 
                     WriteLine(
@@ -530,16 +538,14 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
         }
 
-        private static void AddBaseProxyAndClasses(string proxyGeneratorNameSpace)
+        private static void AddBaseProxyAndClasses(string proxyGeneratorNameSpace, string proxyGeneratorClassNamePrefix)
         {
-            proxyGeneratorNameSpace = string.IsNullOrWhiteSpace(proxyGeneratorNameSpace)
-                ? "Birch.Swagger.ProxyGenerator"
-                : proxyGeneratorNameSpace;
             WriteLine(string.Format("namespace {0}", proxyGeneratorNameSpace));
             WriteLine("{");
             
             // Base Proxy
-            WriteLine("public abstract class BaseProxy");
+            var baseProxyName = proxyGeneratorClassNamePrefix + "BaseProxy";
+            WriteLine(string.Format("public abstract class {0}", baseProxyName));
             WriteLine("{");
             WriteLine("protected readonly Uri BaseUrl;");
             WriteLine("public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;");
@@ -547,7 +553,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("public readonly List<Action<BeforeRequestActionArgs>> BeforeRequestActions;");
             WriteLine("public readonly List<Action<IWebProxyResponse>> AfterRequestActions;");
             WriteLine();
-            WriteLine("protected BaseProxy(Uri baseUrl)");
+            WriteLine(string.Format("protected {0}(Uri baseUrl)", baseProxyName));
             WriteLine("{");
             WriteLine("BaseUrl = baseUrl;");
             WriteLine("GlobalBeforeRequestActions = new List<Action<BeforeRequestActionArgs>>();");
@@ -644,27 +650,27 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("}");
             WriteLine("return currentUrl;");
             WriteLine("}");
-            // Web proxy response class
+            // Web proxy response classes
             WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
             WriteLine("{");
-            WriteLine("public HttpResponseMessage Response { get; internal set; }");
-            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
-            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public HttpResponseMessage Response { get; set; }");
+            WriteLine("public TimeSpan RequestDuration { get; set; }");
+            WriteLine("public Type ExpectedResponseType { get; set; }");
             WriteLine("public T Body { get; internal set; }");
             WriteLine("public Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public class WebProxyResponse : IWebProxyResponse");
             WriteLine("{");
-            WriteLine("public HttpResponseMessage Response { get; internal set; }");
-            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
-            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public HttpResponseMessage Response { get; set; }");
+            WriteLine("public TimeSpan RequestDuration { get; set; }");
+            WriteLine("public Type ExpectedResponseType { get; set; }");
             WriteLine("public Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public interface IWebProxyResponse");
             WriteLine("{");
-            WriteLine("HttpResponseMessage Response { get; }");
-            WriteLine("TimeSpan RequestDuration { get; }");
-            WriteLine("Type ExpectedResponseType { get; }");
+            WriteLine("HttpResponseMessage Response { get; set; }");
+            WriteLine("TimeSpan RequestDuration { get; set; }");
+            WriteLine("Type ExpectedResponseType { get; set; }");
             WriteLine("Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public class BeforeRequestActionArgs");
@@ -689,9 +695,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("}");
         }
 
-        private static async Task GetEndpointSwaggerDoc(TestServer testServer, SwaggerApiProxySettingsEndPoint endPoint)
+        private static async Task GetEndpointSwaggerDoc(TestServer testServer, SwaggerApiProxySettingsEndPoint endPoint, string baseUrl)
         {
-            var swaggerString = await testServer.HttpClient.GetStringAsync(endPoint.Url);
+            var swaggerString = await testServer.HttpClient.GetStringAsync(endPoint.Url.Replace(baseUrl, string.Empty));
             if (swaggerString == null)
             {
                 throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
