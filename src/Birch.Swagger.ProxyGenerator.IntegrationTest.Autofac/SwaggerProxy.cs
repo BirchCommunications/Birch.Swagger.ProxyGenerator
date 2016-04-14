@@ -120,7 +120,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             public HttpResponseMessage Response { get; set; }
             public TimeSpan RequestDuration { get; set; }
             public Type ExpectedResponseType { get; set; }
-            public T Body { get; internal set; }
+            public T Body { get; set; }
             public Exception Exception { get; set; }
         }
         public class WebProxyResponse : IWebProxyResponse
