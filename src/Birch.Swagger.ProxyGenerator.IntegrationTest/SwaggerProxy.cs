@@ -10,7 +10,7 @@ using Birch.Swagger.ProxyGenerator.IntegrationTest;
 
 namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
-    public abstract class BaseProxy
+    public abstract class IntegrationTestBaseProxy
     {
         protected readonly Uri BaseUrl;
         public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;
@@ -18,7 +18,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         public readonly List<Action<BeforeRequestActionArgs>> BeforeRequestActions;
         public readonly List<Action<IWebProxyResponse>> AfterRequestActions;
 
-        protected BaseProxy(Uri baseUrl)
+        protected IntegrationTestBaseProxy(Uri baseUrl)
         {
             BaseUrl = baseUrl;
             GlobalBeforeRequestActions = new List<Action<BeforeRequestActionArgs>>();
@@ -117,24 +117,24 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         }
         public class WebProxyResponse<T> : IWebProxyResponse
         {
-            public HttpResponseMessage Response { get; internal set; }
-            public TimeSpan RequestDuration { get; internal set; }
-            public Type ExpectedResponseType { get; internal set; }
+            public HttpResponseMessage Response { get; set; }
+            public TimeSpan RequestDuration { get; set; }
+            public Type ExpectedResponseType { get; set; }
             public T Body { get; internal set; }
             public Exception Exception { get; set; }
         }
         public class WebProxyResponse : IWebProxyResponse
         {
-            public HttpResponseMessage Response { get; internal set; }
-            public TimeSpan RequestDuration { get; internal set; }
-            public Type ExpectedResponseType { get; internal set; }
+            public HttpResponseMessage Response { get; set; }
+            public TimeSpan RequestDuration { get; set; }
+            public Type ExpectedResponseType { get; set; }
             public Exception Exception { get; set; }
         }
         public interface IWebProxyResponse
         {
-            HttpResponseMessage Response { get; }
-            TimeSpan RequestDuration { get; }
-            Type ExpectedResponseType { get; }
+            HttpResponseMessage Response { get; set; }
+            TimeSpan RequestDuration { get; set; }
+            Type ExpectedResponseType { get; set; }
             Exception Exception { get; set; }
         }
         public class BeforeRequestActionArgs
@@ -157,7 +157,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
     }
 }
 // v2/swagger.json Proxy
-namespace Birch.Swagger.ProxyGenerator.IntegrationTest {
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Birch.Swagger.ProxyGenerator.IntegrationTest {
     public interface IpetWebProxy
     {
         Task addPetAsync(Pet body);
@@ -190,7 +190,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest {
     /// <summary>
     /// Web Proxy for pet
     /// </summary>
-    public class petWebProxy : BaseProxy, IpetWebProxy
+    public class petWebProxy : IntegrationTestBaseProxy, IpetWebProxy
     {
         public petWebProxy(Uri baseUrl) : base(baseUrl)
         {}
@@ -553,7 +553,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest {
     /// <summary>
     /// Web Proxy for store
     /// </summary>
-    public class storeWebProxy : BaseProxy, IstoreWebProxy
+    public class storeWebProxy : IntegrationTestBaseProxy, IstoreWebProxy
     {
         public storeWebProxy(Uri baseUrl) : base(baseUrl)
         {}
@@ -726,7 +726,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest {
     /// <summary>
     /// Web Proxy for user
     /// </summary>
-    public class userWebProxy : BaseProxy, IuserWebProxy
+    public class userWebProxy : IntegrationTestBaseProxy, IuserWebProxy
     {
         public userWebProxy(Uri baseUrl) : base(baseUrl)
         {}

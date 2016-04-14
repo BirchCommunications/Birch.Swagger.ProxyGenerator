@@ -1,19 +1,9 @@
 ﻿{
-  "BaseUrl": "http://petstore.swagger.io/",
-  "WebApiAssembly": "",
-  "WebApiConfig": "web.config",
-  "ProxyOutputFile": "SwaggerProxy.cs",
-  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog",
-  "EndPoints": [
-    {
-      "Id": "SwaggerPetStore",
-      "Url": "v2/swagger.json",
-      "Namespace": "Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog",
-      "Suffix": "WebProxy",
-      "BaseProxyClass": "", // allows you to override the BaseProxy, Your proxy should inherit from the base proxy.
-      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
-      "ParseOperationIdForProxyName": "true",
-      "AppendAsyncToMethodName": "true"
-    }
-  ]
+  "BaseUrl": "http://petstore.swagger.io/", // Default: http://mydomain.com
+  "ProxyGeneratorClassNamePrefix": "SerilogIntegrationTest", // Default: ProxyGenerator (ProxyGeneratorBaseClass)
+  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest", // Default: Birch.Swagger.ProxyGenerator
+  "ProxyOutputFile": "", // Default: SwaggerProxy.cs
+  "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
+  "WebApiConfig": "", // Default: web.config
+  "EndPoints": []
 }

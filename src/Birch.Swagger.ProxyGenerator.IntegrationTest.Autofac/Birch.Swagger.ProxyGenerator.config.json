@@ -1,19 +1,20 @@
 ﻿{
-  "BaseUrl": "http://petstore.swagger.io/",
-  "WebApiAssembly": "",
-  "WebApiConfig": "web.config",
-  "ProxyOutputFile": "SwaggerProxy.cs",
-  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac",
+  "BaseUrl": "http://petstore.swagger.io/", // Default: http://mydomain.com
+  "ProxyGeneratorClassNamePrefix": "AutofacIntegrationTest", // Default: ProxyGenerator (ProxyGeneratorBaseClass)
+  "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest", // Default: Birch.Swagger.ProxyGenerator
+  "ProxyOutputFile": "", // Default: SwaggerProxy.cs
+  "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
+  "WebApiConfig": "", // Default: web.config
   "EndPoints": [
     {
-      "Id": "SwaggerPetStore",
-      "Url": "v2/swagger.json",
-      "Namespace": "Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac",
-      "Suffix": "WebProxy",
-      "BaseProxyClass": "", // allows you to override the BaseProxy, Your proxy should inherit from the base proxy.
-      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)",
-      "ParseOperationIdForProxyName": "true",
-      "AppendAsyncToMethodName": "true"
+      "AppendAsyncToMethodName": "true", // Determines if "Async" suffic should be included on generated method names.
+      "BaseProxyClass": "", // Default: {ProxyGeneratorClassNamePrefix}BaseProxy : Allows you to override the generated base proxy, Your proxy should inherit from the generated base proxy.
+      "Id": "PetStore", // Id to be uesed in namespace
+      "Namespace": "", // Default: {ProxyGeneratorNamespace}.{Id} Note: {ProxyGeneratorNamespace} is always used as a suffix
+      "ParseOperationIdForProxyName": "true", // Uses the swagger operationId else uses swagger tags
+      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)", // Constructor suffix to be used when generating proxy
+      "Suffix": "WebProxy", // Suffix to append to generated class name
+      "Url": "v2/swagger.json" // Url to swagger spec {BaseUrl}{Url}
     }
   ]
 }

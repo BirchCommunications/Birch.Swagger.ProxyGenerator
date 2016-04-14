@@ -8,56 +8,56 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
     public static class WebProxyIntegrationTestExtensions
     {
-        public static T AddBeforeRequestAction<T>(this T proxy, Action<BaseProxy.BeforeRequestActionArgs> action)
+        public static T AddBeforeRequestAction<T>(this T proxy, Action<IntegrationTestBaseProxy.BeforeRequestActionArgs> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.BeforeRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddBeforeRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.BeforeRequestActionArgs>> actions)
+        public static T AddBeforeRequestActions<T>(this T proxy, IEnumerable<Action<IntegrationTestBaseProxy.BeforeRequestActionArgs>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.BeforeRequestActions.AddRange(actions);
             return proxy;
         }
 
-        public static T AddAfterRequestAction<T>(this T proxy, Action<BaseProxy.IWebProxyResponse> action)
+        public static T AddAfterRequestAction<T>(this T proxy, Action<IntegrationTestBaseProxy.IWebProxyResponse> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.AfterRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.IWebProxyResponse>> actions)
+        public static T AddAfterRequestActions<T>(this T proxy, IEnumerable<Action<IntegrationTestBaseProxy.IWebProxyResponse>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.AfterRequestActions.AddRange(actions);
             return proxy;
         }
 
-        public static T AddGlobalBeforeRequestAction<T>(this T proxy, Action<BaseProxy.BeforeRequestActionArgs> action)
+        public static T AddGlobalBeforeRequestAction<T>(this T proxy, Action<IntegrationTestBaseProxy.BeforeRequestActionArgs> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalBeforeRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddGlobalBeforeRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.BeforeRequestActionArgs>> actions)
+        public static T AddGlobalBeforeRequestActions<T>(this T proxy, IEnumerable<Action<IntegrationTestBaseProxy.BeforeRequestActionArgs>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalBeforeRequestActions.AddRange(actions);
             return proxy;
         }
 
-        public static T AddGlobalAfterRequestAction<T>(this T proxy, Action<BaseProxy.IWebProxyResponse> action)
+        public static T AddGlobalAfterRequestAction<T>(this T proxy, Action<IntegrationTestBaseProxy.IWebProxyResponse> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalAfterRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddGlobalAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.IWebProxyResponse>> actions)
+        public static T AddGlobalAfterRequestActions<T>(this T proxy, IEnumerable<Action<IntegrationTestBaseProxy.IWebProxyResponse>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalAfterRequestActions.AddRange(actions);

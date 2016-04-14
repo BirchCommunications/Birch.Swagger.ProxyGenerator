@@ -6,11 +6,11 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac;
+using Birch.Swagger.ProxyGenerator.IntegrationTest;
 
-namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
-    public abstract class BaseProxy
+    public abstract class AutofacIntegrationTestBaseProxy
     {
         protected readonly Uri BaseUrl;
         public readonly List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions;
@@ -18,7 +18,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
         public readonly List<Action<BeforeRequestActionArgs>> BeforeRequestActions;
         public readonly List<Action<IWebProxyResponse>> AfterRequestActions;
 
-        protected BaseProxy(Uri baseUrl)
+        protected AutofacIntegrationTestBaseProxy(Uri baseUrl)
         {
             BaseUrl = baseUrl;
             GlobalBeforeRequestActions = new List<Action<BeforeRequestActionArgs>>();
@@ -117,24 +117,24 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
         }
         public class WebProxyResponse<T> : IWebProxyResponse
         {
-            public HttpResponseMessage Response { get; internal set; }
-            public TimeSpan RequestDuration { get; internal set; }
-            public Type ExpectedResponseType { get; internal set; }
+            public HttpResponseMessage Response { get; set; }
+            public TimeSpan RequestDuration { get; set; }
+            public Type ExpectedResponseType { get; set; }
             public T Body { get; internal set; }
             public Exception Exception { get; set; }
         }
         public class WebProxyResponse : IWebProxyResponse
         {
-            public HttpResponseMessage Response { get; internal set; }
-            public TimeSpan RequestDuration { get; internal set; }
-            public Type ExpectedResponseType { get; internal set; }
+            public HttpResponseMessage Response { get; set; }
+            public TimeSpan RequestDuration { get; set; }
+            public Type ExpectedResponseType { get; set; }
             public Exception Exception { get; set; }
         }
         public interface IWebProxyResponse
         {
-            HttpResponseMessage Response { get; }
-            TimeSpan RequestDuration { get; }
-            Type ExpectedResponseType { get; }
+            HttpResponseMessage Response { get; set; }
+            TimeSpan RequestDuration { get; set; }
+            Type ExpectedResponseType { get; set; }
             Exception Exception { get; set; }
         }
         public class BeforeRequestActionArgs
@@ -157,7 +157,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac
     }
 }
 // v2/swagger.json Proxy
-namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac {
+namespace Birch.Swagger.ProxyGenerator.IntegrationTest.PetStore {
     public interface IpetWebProxy
     {
         Task addPetAsync(Pet body);
@@ -190,7 +190,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac {
     /// <summary>
     /// Web Proxy for pet
     /// </summary>
-    public class petWebProxy : BaseProxy, IpetWebProxy
+    public class petWebProxy : AutofacIntegrationTestBaseProxy, IpetWebProxy
     {
         public petWebProxy(Uri baseUrl) : base(baseUrl)
         {}
@@ -553,7 +553,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac {
     /// <summary>
     /// Web Proxy for store
     /// </summary>
-    public class storeWebProxy : BaseProxy, IstoreWebProxy
+    public class storeWebProxy : AutofacIntegrationTestBaseProxy, IstoreWebProxy
     {
         public storeWebProxy(Uri baseUrl) : base(baseUrl)
         {}
@@ -726,7 +726,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac {
     /// <summary>
     /// Web Proxy for user
     /// </summary>
-    public class userWebProxy : BaseProxy, IuserWebProxy
+    public class userWebProxy : AutofacIntegrationTestBaseProxy, IuserWebProxy
     {
         public userWebProxy(Uri baseUrl) : base(baseUrl)
         {}

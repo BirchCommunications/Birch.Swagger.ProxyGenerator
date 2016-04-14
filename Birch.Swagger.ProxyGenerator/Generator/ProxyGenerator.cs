@@ -444,8 +444,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                 // close namespace def
                 WriteLine("}");
-                File.WriteAllText(proxyOutputFile, FileText.ToString());
             }
+
+            File.WriteAllText(proxyOutputFile, FileText.ToString());
         }
 
         private static void Process(Operation operationDef, string httpMethod)

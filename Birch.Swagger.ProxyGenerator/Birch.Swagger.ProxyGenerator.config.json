@@ -1,4 +1,5 @@
 ﻿{
+  "AutoRunOnBuildDisabled": "false",
   "BaseUrl": "http://petstore.swagger.io/", // Default: http://mydomain.com
   "ProxyGeneratorClassNamePrefix": "", // Default: ProxyGenerator (ProxyGeneratorBaseClass)
   "ProxyGeneratorNamespace": "", // Default: Birch.Swagger.ProxyGenerator

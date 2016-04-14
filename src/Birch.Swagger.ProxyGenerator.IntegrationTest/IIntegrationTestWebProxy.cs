@@ -18,9 +18,9 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         bool ResponseShouldNotBeOfTypeObjectBypassed { get; set; }
 
         // Actions
-        List<Action<BaseProxy.BeforeRequestActionArgs>> BeforeRequestActions { get; set; }
-        List<Action<BaseProxy.BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; }
-        List<Action<BaseProxy.IWebProxyResponse>> AfterRequestActions { get; set; }
-        List<Action<BaseProxy.IWebProxyResponse>> GlobalAfterRequestActions { get; set; }
+        List<Action<IntegrationTestBaseProxy.BeforeRequestActionArgs>> BeforeRequestActions { get; set; }
+        List<Action<IntegrationTestBaseProxy.BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; }
+        List<Action<IntegrationTestBaseProxy.IWebProxyResponse>> AfterRequestActions { get; set; }
+        List<Action<IntegrationTestBaseProxy.IWebProxyResponse>> GlobalAfterRequestActions { get; set; }
     }
 }

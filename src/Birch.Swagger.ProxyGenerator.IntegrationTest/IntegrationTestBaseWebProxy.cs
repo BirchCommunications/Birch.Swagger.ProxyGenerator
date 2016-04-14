@@ -12,7 +12,7 @@ using Shouldly;
 
 namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
-    public abstract class BaseIntegrationTestWebProxy : BaseProxy, IIntegrationTestWebProxy
+    public abstract class BaseIntegrationTestWebProxy : IntegrationTestBaseProxy, IIntegrationTestWebProxy
     {
         public HttpStatusCode ExpectedHttpStatusCode { get; set; } = HttpStatusCode.OK;
         public bool ActionMethodVerificationByPassed { get; set; }

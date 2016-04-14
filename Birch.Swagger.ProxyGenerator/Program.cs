@@ -29,6 +29,7 @@ namespace Birch.Swagger.ProxyGenerator
                 var assemblyFile = string.Empty;
                 var proxyOutputFile = string.Empty;
                 var baseUrl = string.Empty;
+                var isAutoRun = false;
 
                 // base directory is exe directory unless switch override
                 string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
@@ -64,6 +65,10 @@ namespace Birch.Swagger.ProxyGenerator
                         else if (argument == "-basedirectory")
                         {
                             baseDirectory = args[i + 1];
+                        }
+                        else if (argument == "-autorun")
+                        {
+                            isAutoRun = true;
                         }
                     }
                 }
@@ -125,6 +130,7 @@ namespace Birch.Swagger.ProxyGenerator
                 baseUrl = string.IsNullOrWhiteSpace(baseUrl)
                     ? "http://mydomain.com/"
                     : baseUrl;
+
                 // allow relative paths
                 appConfigFile = Path.IsPathRooted(appConfigFile)
                                     ? appConfigFile
@@ -138,6 +144,12 @@ namespace Birch.Swagger.ProxyGenerator
                 proxyOutputFile = Path.IsPathRooted(proxyOutputFile)
                                       ? proxyOutputFile
                                       : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
+                
+                if (!settings.AutoRunOnBuildDisabled && isAutoRun)
+                {
+                    Console.WriteLine("AutoRunOnBuildDisabled has been set to true. Exiting proxy generator.");
+                    ExitApplication(0);
+                }
 
                 // nothing to process..
                 if (string.IsNullOrWhiteSpace(assemblyFile) && string.IsNullOrWhiteSpace(baseUrl))
