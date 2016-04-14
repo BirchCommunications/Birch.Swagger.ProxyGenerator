@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
@@ -11,8 +12,7 @@ using Shouldly;
 
 namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 {
-    public abstract class BaseIntegrationTestWebProxy :
-        BaseProxy, IIntegrationTestWebProxy
+    public abstract class BaseIntegrationTestWebProxy : BaseProxy, IIntegrationTestWebProxy
     {
         public HttpStatusCode ExpectedHttpStatusCode { get; set; } = HttpStatusCode.OK;
         public bool ActionMethodVerificationByPassed { get; set; }
@@ -20,7 +20,11 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         public bool NoResponseHttpStatusVerificationBypassed { get; set; }
         public bool ResponseBodyRequiredBypassed { get; set; }
         public bool ResponseShouldNotBeOfTypeObjectBypassed { get; set; }
-        
+        public new List<Action<BeforeRequestActionArgs>> BeforeRequestActions { get; set; }
+        public new List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; }
+        public new List<Action<IWebProxyResponse>> AfterRequestActions { get; set; }
+        public new List<Action<IWebProxyResponse>> GlobalAfterRequestActions { get; set; }
+
         protected BaseIntegrationTestWebProxy(Uri baseUrl) : base(baseUrl)
         {
         }
@@ -45,7 +49,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             await base.BeforeRequestAsync(actionArgs);
         }
 
-        public override async Task AfterRequestAsync(WebProxyResponse webProxyResponse)
+        public override async Task AfterRequestAsync(IWebProxyResponse webProxyResponse)
         {
             await base.AfterRequestAsync(webProxyResponse);
 
@@ -67,7 +71,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             ResponseBodyRequiredBypassed = false;
         }
 
-        private void ProxyOutputTypeVerification(WebProxyResponse webProxyResponse)
+        private void ProxyOutputTypeVerification(IWebProxyResponse webProxyResponse)
         {
             if (!ResponseBodyRequiredBypassed)
             {
@@ -115,7 +119,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             }
         }
 
-        private void HttpStatusCodeVerification(WebProxyResponse webProxyResponse)
+        private void HttpStatusCodeVerification(IWebProxyResponse webProxyResponse)
         {
             HttpStatusCode? noContentOverride = null;
             if (webProxyResponse.ExpectedResponseType == null)

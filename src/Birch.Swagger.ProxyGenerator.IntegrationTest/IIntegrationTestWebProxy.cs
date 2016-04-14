@@ -20,7 +20,7 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         // Actions
         List<Action<BaseProxy.BeforeRequestActionArgs>> BeforeRequestActions { get; set; }
         List<Action<BaseProxy.BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; }
-        List<Action<BaseProxy.WebProxyResponse>> AfterRequestActions { get; set; }
-        List<Action<BaseProxy.WebProxyResponse>> GlobalAfterRequestActions { get; set; }
+        List<Action<BaseProxy.IWebProxyResponse>> AfterRequestActions { get; set; }
+        List<Action<BaseProxy.IWebProxyResponse>> GlobalAfterRequestActions { get; set; }
     }
 }

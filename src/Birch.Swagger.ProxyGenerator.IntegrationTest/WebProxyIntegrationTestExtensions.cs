@@ -22,14 +22,14 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             return proxy;
         }
 
-        public static T AddAfterRequestAction<T>(this T proxy, Action<BaseProxy.WebProxyResponse> action)
+        public static T AddAfterRequestAction<T>(this T proxy, Action<BaseProxy.IWebProxyResponse> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.AfterRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.WebProxyResponse>> actions)
+        public static T AddAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.IWebProxyResponse>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.AfterRequestActions.AddRange(actions);
@@ -50,14 +50,14 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
             return proxy;
         }
 
-        public static T AddGlobalAfterRequestAction<T>(this T proxy, Action<BaseProxy.WebProxyResponse> action)
+        public static T AddGlobalAfterRequestAction<T>(this T proxy, Action<BaseProxy.IWebProxyResponse> action)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalAfterRequestActions.Add(action);
             return proxy;
         }
 
-        public static T AddGlobalAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.WebProxyResponse>> actions)
+        public static T AddGlobalAfterRequestActions<T>(this T proxy, IEnumerable<Action<BaseProxy.IWebProxyResponse>> actions)
             where T : IIntegrationTestWebProxy
         {
             proxy.GlobalAfterRequestActions.AddRange(actions);
