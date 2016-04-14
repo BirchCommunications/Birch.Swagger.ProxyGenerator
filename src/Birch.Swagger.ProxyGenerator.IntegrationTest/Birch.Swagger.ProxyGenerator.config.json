@@ -5,16 +5,5 @@
   "ProxyOutputFile": "SwaggerProxy.cs", // Default: SwaggerProxy.cs
   "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
   "WebApiConfig": "web.config", // Default: web.config
-  "EndPoints": [
-    {
-      "AppendAsyncToMethodName": "true", // Determines if "Async" suffic should be included on generated method names.
-      "BaseProxyClass": "", // Default: {ProxyGeneratorClassNamePrefix}BaseProxy : Allows you to override the generated base proxy, Your proxy should inherit from the generated base proxy.
-      "Id": "IntegrationTest", // Id to be uesed in namespace
-      "Namespace": "Birch.Swagger.ProxyGenerator.IntegrationTest", // Default: {ProxyGeneratorNamespace}.{Id} Note: {ProxyGeneratorNamespace} is always used as a suffix
-      "ParseOperationIdForProxyName": "true", // Uses the swagger operationId else uses swagger tags
-      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)", // Constructor suffix to be used when generating proxy
-      "Suffix": "WebProxy", // Suffix to append to generated class name
-      "Url": "v2/swagger.json" // Url to swagger spec {BaseUrl}{Url}
-    }
-  ]
+  "EndPoints": []
 }

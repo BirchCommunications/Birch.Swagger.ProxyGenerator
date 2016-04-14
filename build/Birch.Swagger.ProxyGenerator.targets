@@ -8,6 +8,6 @@
     <PropertyGroup>
       <ProxyGeneratorExecutable>$(solutionDir)packages\Birch.Swagger.ProxyGenerator.$(ProxyGeneratorVersion)\tools\ProxyGenerator\Birch.Swagger.ProxyGenerator.exe</ProxyGeneratorExecutable>
     </PropertyGroup>
-    <Exec Command='"$(ProxyGeneratorExecutable)" -BaseDirectory "$(projectDir)\ -AutoRun true"' />
+    <Exec Command='"$(ProxyGeneratorExecutable)" -BaseDirectory "$(projectDir)\" -AutoRun true' />
   </Target>
 </Project>
