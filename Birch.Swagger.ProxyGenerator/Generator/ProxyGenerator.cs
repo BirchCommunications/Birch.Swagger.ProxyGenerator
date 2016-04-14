@@ -80,7 +80,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Console.WriteLine();
             Console.WriteLine("Processing Swagger documents...");
 
-            // TODO: allow custom namespace later
             PrintHeaders(proxyGeneratorNamespace);
             AddBaseProxyAndClasses(proxyGeneratorNamespace);
 
@@ -538,36 +537,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 : proxyGeneratorNameSpace;
             WriteLine(string.Format("namespace {0}", proxyGeneratorNameSpace));
             WriteLine("{");
-            // Web proxy response class
-            WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
-            WriteLine("{");
-            WriteLine("public HttpResponseMessage Response { get; internal set; }");
-            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
-            WriteLine("public Type ExpectedResponseType { get; internal set; }");
-            WriteLine("public T Body { get; internal set; }");
-            WriteLine("public Exception Exception { get; set; }");
-            WriteLine("}");
-            WriteLine("public class WebProxyResponse : IWebProxyResponse");
-            WriteLine("{");
-            WriteLine("public HttpResponseMessage Response { get; internal set; }");
-            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
-            WriteLine("public Type ExpectedResponseType { get; internal set; }");
-            WriteLine("public Exception Exception { get; set; }");
-            WriteLine("}");
-            WriteLine("public interface IWebProxyResponse");
-            WriteLine("{");
-            WriteLine("HttpResponseMessage Response { get; }");
-            WriteLine("TimeSpan RequestDuration { get; }");
-            WriteLine("Type ExpectedResponseType { get; }");
-            WriteLine("Exception Exception { get; set; }");
-            WriteLine("}");
-            WriteLine("public class BeforeRequestActionArgs");
-            WriteLine("{");
-            WriteLine("public string Uri { get; set; }");
-            WriteLine("public string ActionName { get; set; }");
-            WriteLine("public string Method { get; set; }");
-            WriteLine("}");
-
+            
             // Base Proxy
             WriteLine("public abstract class BaseProxy");
             WriteLine("{");
@@ -674,11 +644,36 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("}");
             WriteLine("return currentUrl;");
             WriteLine("}");
+            // Web proxy response class
+            WriteLine("public class WebProxyResponse<T> : IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("public HttpResponseMessage Response { get; internal set; }");
+            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
+            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public T Body { get; internal set; }");
+            WriteLine("public Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public class WebProxyResponse : IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("public HttpResponseMessage Response { get; internal set; }");
+            WriteLine("public TimeSpan RequestDuration { get; internal set; }");
+            WriteLine("public Type ExpectedResponseType { get; internal set; }");
+            WriteLine("public Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public interface IWebProxyResponse");
+            WriteLine("{");
+            WriteLine("HttpResponseMessage Response { get; }");
+            WriteLine("TimeSpan RequestDuration { get; }");
+            WriteLine("Type ExpectedResponseType { get; }");
+            WriteLine("Exception Exception { get; set; }");
+            WriteLine("}");
+            WriteLine("public class BeforeRequestActionArgs");
+            WriteLine("{");
+            WriteLine("public string Uri { get; set; }");
+            WriteLine("public string ActionName { get; set; }");
+            WriteLine("public string Method { get; set; }");
             WriteLine("}");
             WriteLine();
-            WriteLine("/// <summary>");
-            WriteLine("/// Simple Http Response");
-            WriteLine("/// </summary>");
             WriteLine("public class SimpleHttpResponseException : Exception");
             WriteLine("{");
             WriteLine("public HttpStatusCode StatusCode { get; private set; }");
@@ -687,6 +682,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine(": base(content)");
             WriteLine("{");
             WriteLine("StatusCode = statusCode;");
+            WriteLine("}");
             WriteLine("}");
             WriteLine("}");
 
