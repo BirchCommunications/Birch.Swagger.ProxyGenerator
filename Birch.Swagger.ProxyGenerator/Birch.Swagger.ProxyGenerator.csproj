@@ -82,7 +82,6 @@
     <Compile Include="Swagger\TypeDefinition.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
     <Content Include="Birch.Swagger.ProxyGenerator.config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
