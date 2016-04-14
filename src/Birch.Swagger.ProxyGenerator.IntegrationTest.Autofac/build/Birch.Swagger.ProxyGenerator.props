@@ -7,6 +7,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   -->
   <PropertyGroup>
-    <ProxyGeneratorVersion>1.0.39-alpha</ProxyGeneratorVersion>
+    <ProxyGeneratorVersion>1.0.40-alpha</ProxyGeneratorVersion>
   </PropertyGroup>
 </Project>

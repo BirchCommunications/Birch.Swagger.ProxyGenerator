@@ -12,9 +12,9 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <copyright>Copyright 2016 Birch</copyright>
     <dependencies>
-      <dependency id="Birch.Swagger.ProxyGenerator" version="1.0.37" />
+      <dependency id="Birch.Swagger.ProxyGenerator" version="1.0.40" />
       <dependency id="Microsoft.Owin.Testing" version="3.0.1" />
-      <dependency id="Shouldly" version="2.6.0" />
+      <dependency id="Shouldly" version="2.7.0" />
     </dependencies>
   </metadata>
   <files>
