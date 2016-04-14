@@ -32,8 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Birch.Swagger.ProxyGenerator.IntegrationTest, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Birch.Swagger.ProxyGenerator.IntegrationTest.2.0.3-alpha\lib\net45\Birch.Swagger.ProxyGenerator.IntegrationTest.dll</HintPath>
+    <Reference Include="Birch.Swagger.ProxyGenerator.IntegrationTest">
+      <HintPath>..\..\packages\Birch.Swagger.ProxyGenerator.IntegrationTest.2.0.4-alpha\lib\net45\Birch.Swagger.ProxyGenerator.IntegrationTest.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Owin">
@@ -101,6 +101,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="Birch.Swagger.ProxyGenerator.config.json" />
     <None Include="build\Birch.Swagger.ProxyGenerator.props" />
     <None Include="packages.config" />
