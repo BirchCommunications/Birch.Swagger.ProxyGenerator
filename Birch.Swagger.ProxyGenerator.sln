@@ -31,9 +31,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTest", "Integrat
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{CF25A733-5784-4F79-89C3-5197E1C642F7}"
 	ProjectSection(SolutionItems) = preProject
+		build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec
 		build\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.Serilog.nuspec
 		build\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.XUnit.nuspec
-		build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec = build\Birch.Swagger.ProxyGenerator.IntegrationTest.Autofac.nuspec
 	EndProjectSection
 EndProject
 Global
