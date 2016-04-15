@@ -20,10 +20,14 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
         public bool NoResponseHttpStatusVerificationBypassed { get; set; }
         public bool ResponseBodyRequiredBypassed { get; set; }
         public bool ResponseShouldNotBeOfTypeObjectBypassed { get; set; }
-        public new List<Action<BeforeRequestActionArgs>> BeforeRequestActions { get; set; }
-        public new List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; }
-        public new List<Action<IWebProxyResponse>> AfterRequestActions { get; set; }
-        public new List<Action<IWebProxyResponse>> GlobalAfterRequestActions { get; set; }
+        public new List<Action<BeforeRequestActionArgs>> BeforeRequestActions { get; set; } =
+            new List<Action<BeforeRequestActionArgs>>();
+        public new List<Action<BeforeRequestActionArgs>> GlobalBeforeRequestActions { get; set; } =
+            new List<Action<BeforeRequestActionArgs>>();
+        public new List<Action<IWebProxyResponse>> AfterRequestActions { get; set; } =
+            new List<Action<IWebProxyResponse>>();
+        public new List<Action<IWebProxyResponse>> GlobalAfterRequestActions { get; set; } =
+            new List<Action<IWebProxyResponse>>();
 
         protected BaseIntegrationTestWebProxy(Uri baseUrl) : base(baseUrl)
         {
