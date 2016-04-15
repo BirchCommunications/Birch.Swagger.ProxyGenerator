@@ -85,6 +85,7 @@
     <Content Include="Birch.Swagger.ProxyGenerator.config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="App.config" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
