@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoRollbackAttribute.cs" />
+    <Compile Include="SwaggerProxy.cs" />
     <Compile Include="XUnitWebProxyExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

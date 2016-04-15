@@ -145,10 +145,10 @@ namespace Birch.Swagger.ProxyGenerator
                                       ? proxyOutputFile
                                       : Path.GetFullPath(Path.Combine(baseDirectory, proxyOutputFile));
                 
-                if (!settings.AutoRunOnBuildDisabled && isAutoRun)
+                if (settings.AutoRunOnBuildDisabled && isAutoRun)
                 {
                     Console.WriteLine("AutoRunOnBuildDisabled has been set to true. Exiting proxy generator.");
-                    ExitApplication(0);
+                    return ExitApplication(0);
                 }
 
                 // nothing to process..
