@@ -86,7 +86,6 @@
     <Compile Include="AutofacIntegrationTestBaseProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AutofacWebProxyExtensions.cs" />
-    <Compile Include="SwaggerProxy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Birch.Swagger.ProxyGenerator.config.json" />
