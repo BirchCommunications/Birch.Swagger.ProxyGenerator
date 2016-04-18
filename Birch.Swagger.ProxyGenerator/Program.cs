@@ -289,7 +289,33 @@ namespace Birch.Swagger.ProxyGenerator
             var name = $"{e.Name.Split(',')[0]}.dll";
             var searchPath = string.Format("{1}\\{0}", name, Path.GetDirectoryName(assemblyFile));
             Console.WriteLine("Resolving {0}", e.Name);
-            var assembly = Assembly.LoadFrom(searchPath);
+            Assembly assembly;
+            try
+            {
+                Console.WriteLine("Trying: {0}", searchPath);
+                assembly = Assembly.LoadFrom(searchPath);
+            }
+            catch (Exception)
+            {
+                assembly = null;
+            }
+            try
+            {
+                var assemblyName = e.Name.Split(',').FirstOrDefault();
+                if (assemblyName != null)
+                {
+                    Console.WriteLine("Trying: {0}", assemblyName);
+                    assembly = Assembly.Load(assemblyName);
+                }
+            }
+            catch (Exception)
+            {
+                assembly = null;
+            }
+            if (assembly == null)
+            {
+                Console.WriteLine("Returning null for assembly: {0}", name);
+            }
             return assembly;
         }
 
