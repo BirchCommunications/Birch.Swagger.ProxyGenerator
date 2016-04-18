@@ -64,7 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Generator\Enum.cs" />
-    <Content Include="SwaggerProxy.cs" />
+    <Content Include="SwaggerProxy.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Compile Include="Swagger\ClassDefinition.cs" />
     <Compile Include="Swagger\Operation.cs" />
     <Compile Include="Swagger\Parameter.cs" />
