@@ -25,7 +25,7 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 var isAutoRun = false;
 
                 // base directory is exe directory unless switch override
-                string baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
+                var baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
                     ?.Replace(@"file:\", string.Empty);
 
                 // check for switch values
@@ -173,7 +173,12 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 var arguments = argumentBuilder.ToString();
 
                 // copy config file
-                File.Copy(appConfigFile, "Birch.Swagger.ProxyGenerator.exe.config", true);
+                var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
+                    ?.Replace(@"file:\", string.Empty) ?? string.Empty;
+                var exeConfig = Path.Combine(exeDir, "Birch.Swagger.ProxyGenerator.exe.config");
+                Console.WriteLine("Copying \"{0}\" to \"{1}\"", appConfigFile, exeConfig);
+                Console.WriteLine();
+                File.Copy(appConfigFile, exeConfig, true);
 
                 var process = new Process
                 {
@@ -192,6 +197,8 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
+
+                Console.WriteLine("Removing \"{0}\"", exeConfig);
 
                 File.Delete("Birch.Swagger.ProxyGenerator.exe.config");
 
