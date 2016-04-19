@@ -6,7 +6,7 @@
   <Import Project="$(projectDir)$(PropsFile)" Condition="'$(PropsFile)' != ''" />
   <Target Name="BeforeBuild" >
     <PropertyGroup>
-      <ProxyGeneratorExecutable>$(solutionDir)packages\Birch.Swagger.ProxyGenerator.$(ProxyGeneratorVersion)\tools\ProxyGenerator\Birch.Swagger.ProxyGenerator.exe</ProxyGeneratorExecutable>
+      <ProxyGeneratorExecutable>$(solutionDir)packages\Birch.Swagger.ProxyGenerator.$(ProxyGeneratorVersion)\tools\ProxyGenerator\Birch.Swagger.ProxyGenerator.Startup.exe</ProxyGeneratorExecutable>
     </PropertyGroup>
     <Exec Command='"$(ProxyGeneratorExecutable)" -BaseDirectory "$(projectDir)\" -AutoRun true' />
   </Target>

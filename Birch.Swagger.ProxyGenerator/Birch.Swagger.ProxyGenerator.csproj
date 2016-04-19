@@ -45,7 +45,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
@@ -67,6 +67,7 @@
     <Content Include="SwaggerProxy.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Compile Include="Generator\SwaggerApiProxySettings.cs" />
     <Compile Include="Swagger\ClassDefinition.cs" />
     <Compile Include="Swagger\Operation.cs" />
     <Compile Include="Swagger\Parameter.cs" />
@@ -76,7 +77,6 @@
     <Compile Include="Swagger\ProxyDefinition.cs" />
     <Compile Include="Generator\ProxyGenerator.cs" />
     <Compile Include="Generator\Settings.cs" />
-    <Compile Include="Generator\SwaggerApiProxySettings.cs" />
     <Compile Include="Generator\SwaggerApiProxySettingsEndPoint.cs" />
     <Compile Include="Swagger\SwaggerParser.cs" />
     <Compile Include="Swagger\TypeDefinition.cs" />
@@ -85,7 +85,6 @@
     <Content Include="Birch.Swagger.ProxyGenerator.config.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="app.config" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
