@@ -5,6 +5,6 @@
   "ProxyGeneratorNamespace": "Birch.Swagger.ProxyGenerator.IntegrationTest", // Default: Birch.Swagger.ProxyGenerator
   "ProxyOutputFile": "SwaggerProxy.cs", // Default: SwaggerProxy.cs
   "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
-  "WebApiConfig": "web.config", // Default: web.config
+  "WebApiConfig": "app.config", // Default: web.config
   "EndPoints": []
 }
