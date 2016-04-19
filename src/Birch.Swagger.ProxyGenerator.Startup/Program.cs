@@ -180,11 +180,14 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 Console.WriteLine();
                 File.Copy(appConfigFile, exeConfig, true);
 
+                // starting process
+                var processName = "Birch.Swagger.ProxyGenerator.exe";
+                Console.WriteLine("Starting process \"{0}\" with arguments \"{1}\".", processName, arguments);
                 var process = new Process
                 {
                     StartInfo =
                         {
-                            FileName = "Birch.Swagger.ProxyGenerator.exe",
+                            FileName = processName,
                             Arguments = arguments,
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
