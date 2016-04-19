@@ -1,6 +1,7 @@
 ## Birch specific entries
 !/lib/*
 .VS/**
+**/SwaggerProxy.cs
 
 # The MSBuild.Community.Tasks.dll is not stored in the packages folder
 # but is copied to the .build folder with the solution.
