@@ -787,16 +787,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
         }
 
-        public static SwaggerApiProxySettings GetSettings(string path)
-        {
-            using (var settingStream = File.OpenRead(path))
-            {
-                var streamReader = new StreamReader(settingStream);
-                var value = streamReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<SwaggerApiProxySettings>(value);
-            }
-        }
-
         private static void WriteLine()
         {
             FileText.AppendLine(string.Empty);

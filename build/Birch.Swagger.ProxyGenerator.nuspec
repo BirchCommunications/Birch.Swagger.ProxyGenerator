@@ -18,7 +18,7 @@
   </metadata>
   <files>
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\*.dll" target="tools/ProxyGenerator" />
-    <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.exe.config" target="tools/ProxyGenerator" />
+    <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.Startup.exe" target="tools/ProxyGenerator" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.exe" target="tools/ProxyGenerator" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.config.json" target="tools/ProxyGenerator" />
     <file src="..\Birch.Swagger.ProxyGenerator\bin\release\Birch.Swagger.ProxyGenerator.config.json" target="content" />
