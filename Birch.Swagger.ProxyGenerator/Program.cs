@@ -43,7 +43,7 @@ namespace Birch.Swagger.ProxyGenerator
                     {
                         assemblyFile = args[i + 1];
                     }
-                    else if (argument == "-proxygeneratorclassNameprefix")
+                    else if (argument == "-proxygeneratorclassnameprefix")
                     {
                         proxyGeneratorClassNamePrefix = args[i + 1];
                     }
