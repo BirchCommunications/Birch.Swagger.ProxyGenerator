@@ -77,10 +77,10 @@ namespace Birch.Swagger.ProxyGenerator.IntegrationTest
 
         private void ProxyOutputTypeVerification(IWebProxyResponse webProxyResponse)
         {
-            if (!ResponseBodyRequiredBypassed)
+            if (!ResponseBodyRequiredBypassed && webProxyResponse.Response.StatusCode != HttpStatusCode.NoContent)
             {
-                const string errorMessage = "You should generally have a response body returned for all calls" +
-                                            " you can bypass this verification for actions that do not have a response body by" +
+                const string errorMessage = "You should generally have a response body returned for all calls that do not return a NoContent status code." +
+                                            "  You can bypass this verification for actions that do not have a response body by" +
                                             " using the .BypassResponseBodyRequiredVerification() extension method on the web proxy.";
                 webProxyResponse.ExpectedResponseType.ShouldNotBeNull(errorMessage);
             }
