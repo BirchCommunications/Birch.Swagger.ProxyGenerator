@@ -121,7 +121,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                             ? string.Empty
                             : string.Format("<{0}>", operationDef.ReturnType);
-                       
+                        var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
+                        foreach (var enumParam in enums)
+                        {
+                            enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
+                        }
                         string parameters = string.Join(
                             ", ",
                             operationDef.Parameters.OrderByDescending(i => i.IsRequired)
