@@ -14,8 +14,6 @@ using Birch.Swagger.ProxyGenerator.Swagger;
 using Microsoft.CSharp;
 using Microsoft.Owin.Testing;
 
-using Newtonsoft.Json;
-
 namespace Birch.Swagger.ProxyGenerator.Generator
 {
     [SuppressMessage("ReSharper", "UseStringInterpolation")]
@@ -117,31 +115,37 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 string.Format("I{0}WebProxy", SwaggerParser.FixTypeName(proxy))));
                     WriteLine("{");
                     var proxy1 = proxy;
+
                     foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy1)))
                     {
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                             ? string.Empty
                             : string.Format("<{0}>", operationDef.ReturnType);
-
-                        var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
+                       
                         string parameters = string.Join(
                             ", ",
                             operationDef.Parameters.OrderByDescending(i => i.IsRequired)
                                 .Select(
                                     x =>
                                     {
-                                        // if parameter is enum include the namespace
-                                        string parameter = x.Type.EnumValues != null ? string.Format("{0}.{1}.", endpointNamespace, className) : string.Empty;
-                                        parameter += x.IsRequired == false
+                                        var defaultType = GetDefaultType(x);
+                                        var defaultValue = GetDefaultValue(x);
+
+                                        if (x.Type.EnumValues != null)
+                                        {
+                                            var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
+                                            defaultType = className + "." + defaultType;
+                                            defaultValue = className + "." + defaultValue;
+                                        }
+                                        return (x.IsRequired == false)
                                             ? string.Format(
-                                                "{0} {1} = {3}{2}",
-                                                GetDefaultType(x),
+                                                "{0} {1} = {2}",
+                                                defaultType,
                                                 x.Type.GetCleanTypeName(),
-                                                GetDefaultValue(x),
-                                                parameter)
-                                            : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName());
-                                        return parameter;
+                                                defaultValue)
+                                            : string.Format("{0} {1}", defaultType, x.Type.GetCleanTypeName());
                                     }));
+
                         WriteLine(
                             string.Format(
                                 "Task{0} {1}{2}({3});",
@@ -184,8 +188,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                                                 ? string.Empty
                                                 : string.Format("<{0}>", operationDef.ReturnType);
-                        var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
 
+                        // enums
+                        var enums = operationDef.Parameters.Where(i => i.Type.EnumValues != null);
                         foreach (var enumParam in enums)
                         {
                             enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
@@ -543,7 +548,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         {
             WriteLine(string.Format("namespace {0}", proxyGeneratorNameSpace));
             WriteLine("{");
-            
+
             // Base Proxy
             var baseProxyName = proxyGeneratorClassNamePrefix + "BaseProxy";
             WriteLine(string.Format("public abstract class {0}", baseProxyName));
