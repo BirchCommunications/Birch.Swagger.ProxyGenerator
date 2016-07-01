@@ -427,11 +427,13 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     foreach (var prop in classDef.Properties)
                     {
                         var typeName = string.IsNullOrWhiteSpace(prop.TypeName) ? "object" : prop.TypeName;
-                        WriteLine(string.Format("public {0} {1} {{ get; set; }}", typeName, prop.Name));
                         if (prop.EnumValues != null)
                         {
-                            modelEnums.Add(new Enum() { Name = typeName, Values = prop.EnumValues });
+                            modelEnums.Add(new Enum { Name = typeName, Values = prop.EnumValues });
+                            typeName += prop.IsNullableType ? "?" : string.Empty;
                         }
+
+                        WriteLine(string.Format("public {0} {1} {{ get; set; }}", typeName, prop.Name));
                     }
 
                     foreach (var modelEnum in modelEnums)
