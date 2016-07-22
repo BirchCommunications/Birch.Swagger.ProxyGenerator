@@ -803,13 +803,15 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             FileText.AppendLine(string.Empty);
         }
 
+        static ConcurrentDictionary<int, string> paddingCache = new ConcurrentDictionary<int, string>();
         private static void WriteLine(string text)
         {
             if ((text == "}" || text == "};") && TextPadding != 0)
             {
                 TextPadding--;
             }
-            string textPadding = new string(' ', TextPadding * 4);
+
+            var textPadding = paddingCache.GetOrAdd(TextPadding, i => new string(' ', i*4));           
             FileText.AppendLine(string.Format("{1}{0}", text, textPadding));
             if (text.EndsWith("{"))
             {

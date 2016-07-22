@@ -1,9 +1,9 @@
 @echo off
 
-set MSBUILDDIR=C:\Program Files (x86)\MSBuild\12.0\bin\
+set MSBUILDDIR=C:\Program Files (x86)\MSBuild\14.0\bin\
 IF EXIST "%MSBUILDDIR%msbuild.exe" goto RunIt
 
-set MSBUILDDIR=C:\Program Files\MSBuild\12.0\bin\
+set MSBUILDDIR=C:\Program Files\MSBuild\14.0\bin\
 IF EXIST %MSBUILDDIR%msbuild.exe goto RunIt
 
 :: find msbuild and compile sln in root
