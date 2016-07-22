@@ -185,6 +185,8 @@ namespace Birch.Swagger.ProxyGenerator
         static Assembly CustomResolver(object source, ResolveEventArgs e, string assemblyFile)
         {
             var name = $"{e.Name.Split(',')[0]}.dll";
+            if (name.EndsWith(".XmlSerializers.dll"))
+                return null;
             var searchPath = string.Format("{1}\\{0}", name, Path.GetDirectoryName(assemblyFile));
             Console.WriteLine("Resolving {0}", e.Name);
             Assembly assembly;
