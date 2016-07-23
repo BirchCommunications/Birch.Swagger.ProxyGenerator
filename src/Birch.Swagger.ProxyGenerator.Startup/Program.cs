@@ -12,8 +12,8 @@ namespace Birch.Swagger.ProxyGenerator.Startup
     {
         static int Main(string[] args)
         {
-            Console.WriteLine("Starting Birch.Swagger.ProxyGenerator...");
-            Console.WriteLine();
+            Output.Write("Starting Birch.Swagger.ProxyGenerator...");
+            Output.Write();
             try
             {
                 // define variables for switches
@@ -63,17 +63,21 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                         {
                             isAutoRun = true;
                         }
+                        else if (argument == "-verbose")
+                        {
+                            Output.Verbose = true;
+                        }
                     }
                 }
 
                 // Load Proxy Generator Settings
-                Console.WriteLine($"Loading settings... \n{settingsFile}");
+                Output.Debug($"Loading settings... \n{settingsFile}");
                 if (baseDirectory == null)
                 {
-                    Console.WriteLine("Could not determine base directory,");
+                    Output.Write("Could not determine base directory,");
                     return ExitApplication(1);
                 }
-                Console.WriteLine($"Base Directory: {baseDirectory}");
+                Output.Debug($"Base Directory: {baseDirectory}");
                 var combine = Path.Combine(baseDirectory, "Birch.Swagger.ProxyGenerator.config.json");
                 if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
                 {
@@ -82,11 +86,11 @@ namespace Birch.Swagger.ProxyGenerator.Startup
 
                 if (string.IsNullOrWhiteSpace(settingsFile))
                 {
-                    Console.WriteLine(
+                    Output.Write(
                         "Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
                         + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
-                    Console.WriteLine();
-                    Console.WriteLine("Exiting Proxy Generator.");
+                    Output.Write();
+                    Output.Write("Exiting Proxy Generator.");
                     return ExitApplication(1);
                 }
 
@@ -139,29 +143,29 @@ namespace Birch.Swagger.ProxyGenerator.Startup
 
                 if (settings.AutoRunOnBuildDisabled && isAutoRun)
                 {
-                    Console.WriteLine("AutoRunOnBuildDisabled has been set to true. Exiting proxy generator.");
+                    Output.Write("AutoRunOnBuildDisabled has been set to true. Exiting proxy generator.");
                     return ExitApplication(0);
                 }
 
                 // nothing to process..
                 if (string.IsNullOrWhiteSpace(assemblyFile) && string.IsNullOrWhiteSpace(baseUrl))
                 {
-                    Console.WriteLine("No baseUrl or path to the WebApi assembly file provided, nothing to process.");
-                    Console.WriteLine();
-                    Console.WriteLine("Exiting Proxy Generator.");
+                    Output.Write("No baseUrl or path to the WebApi assembly file provided, nothing to process.");
+                    Output.Write();
+                    Output.Write("Exiting Proxy Generator.");
                     return ExitApplication(1);
                 }
 
                 // print settings
-                Console.WriteLine($"Mode: {(string.IsNullOrWhiteSpace(assemblyFile) ? "BaseUrl" : "In Memory")}");
-                Console.WriteLine($"Output: {proxyOutputFile}");
+                Output.Debug($"Mode: {(string.IsNullOrWhiteSpace(assemblyFile) ? "BaseUrl" : "In Memory")}");
+                Output.Debug($"Output: {proxyOutputFile}");
                 if (!string.IsNullOrWhiteSpace(assemblyFile))
                 {
-                    Console.WriteLine($"Assembly: {assemblyFile}");
-                    Console.WriteLine($"App Config: {appConfigFile}");
+                    Output.Debug($"Assembly: {assemblyFile}");
+                    Output.Debug($"App Config: {appConfigFile}");
                 }
 
-                Console.WriteLine();
+                Output.Debug();
 
                 var argumentBuilder = new StringBuilder();
                 argumentBuilder.Append($"-SettingsFile \"{settingsFile}\" ");
@@ -170,19 +174,20 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 argumentBuilder.Append($"-ProxyGeneratorClassNamePrefix \"{proxyGeneratorClassNamePrefix}\" ");
                 argumentBuilder.Append($"-ProxyOutputFile \"{proxyOutputFile}\" ");
                 argumentBuilder.Append($"-BaseUrl \"{baseUrl}\" ");
+                if (Output.Verbose) argumentBuilder.Append("-verbose ");
                 var arguments = argumentBuilder.ToString();
 
                 // copy config file
                 var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
                     ?.Replace(@"file:\", string.Empty) ?? string.Empty;
                 var exeConfig = Path.Combine(exeDir, "Birch.Swagger.ProxyGenerator.exe.config");
-                Console.WriteLine($"Copying \"{appConfigFile}\" to \"{exeConfig}\"");
-                Console.WriteLine();
+                Output.Debug($"Copying \"{appConfigFile}\" to \"{exeConfig}\"");
+                Output.Debug();
                 File.Copy(appConfigFile, exeConfig, true);
                 
                 // starting process
                 const string processName = "Birch.Swagger.ProxyGenerator.exe";
-                Console.WriteLine($"Starting process \"{processName}\" with arguments \"{arguments}\".");
+                Output.Debug($"Starting process \"{processName}\" with arguments \"{arguments}\".");
                 var process = new Process
                 {
                     StartInfo =
@@ -194,14 +199,14 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                             RedirectStandardError = true
                         }
                 };
-                process.OutputDataReceived += (s, e) => Console.WriteLine(e.Data);
-                process.ErrorDataReceived += (s, e) => Console.WriteLine(e.Data);
+                process.OutputDataReceived += (s, e) => Output.Write(e.Data);
+                process.ErrorDataReceived += (s, e) => Output.Write(e.Data);
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
 
-                Console.WriteLine($"Removing \"{exeConfig}\"");
+                Output.Debug($"Removing \"{exeConfig}\"");
 
                 File.Delete("Birch.Swagger.ProxyGenerator.exe.config");
 
@@ -211,20 +216,20 @@ namespace Birch.Swagger.ProxyGenerator.Startup
             {
                 foreach (Exception ex in aex.InnerExceptions)
                 {
-                    Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
-                    Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                    Console.WriteLine();
+                    Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
+                    Output.Write($"StackTrace: {ex.StackTrace}");
+                    Output.Write();
                 }
 
-                Console.WriteLine("Exiting Proxy Generator.");
+                Output.Write("Exiting Proxy Generator.");
                 return ExitApplication(1);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                Console.WriteLine();
-                Console.WriteLine("Exiting Proxy Generator.");
+                Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
+                Output.Write($"StackTrace: {ex.StackTrace}");
+                Output.Write();
+                Output.Write("Exiting Proxy Generator.");
                 return ExitApplication(1);
             }
         }
@@ -246,7 +251,7 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 return exitCode;
             }
 
-            Console.WriteLine("Press any key to continue...");
+            Output.Write("Press any key to continue...");
             Console.ReadKey();
             return exitCode;
         }

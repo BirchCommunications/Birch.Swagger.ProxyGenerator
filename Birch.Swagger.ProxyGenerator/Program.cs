@@ -12,13 +12,23 @@ using Newtonsoft.Json;
 
 namespace Birch.Swagger.ProxyGenerator
 {
+    public static class Output
+    {
+        public static bool Verbose { get; set; } = false;
+        public static void Write(string s = null) => Console.WriteLine(s);
+        public static void Debug(string s = null)
+        {
+            if (Verbose) Write(s);
+        }
+    }
+
     // ReSharper disable once ClassNeverInstantiated.Global
     public class Program
     {
         static int Main(string[] args)
         {
-            Console.WriteLine("Birch.Swagger.ProxyGenerator Started...");
-            Console.WriteLine();
+            Output.Debug("Birch.Swagger.ProxyGenerator Started...");
+            Output.Debug();
             // check for switch values
             var assemblyFile = string.Empty;
             var proxyOutputFile = string.Empty;
@@ -55,13 +65,17 @@ namespace Birch.Swagger.ProxyGenerator
                     {
                         baseUrl = args[i + 1];
                     }
+                    else if (argument == "-verbose")
+                    {
+                        Output.Verbose = true;
+                    }
                 }
             }
 
             var settings = GetSettings(settingsFile);
             var endpoints = settings.EndPoints;
 
-            Stopwatch appStopwatch = new Stopwatch();
+            var appStopwatch = new Stopwatch();
             appStopwatch.Start();
             try
             {
@@ -80,32 +94,30 @@ namespace Birch.Swagger.ProxyGenerator
                 }
 
                 // All done
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine("----------------------------------------------------");
-                Console.WriteLine("Proxy generation completed....");
-                Console.WriteLine("Time Taken: {0}", appStopwatch.Elapsed);
-                Console.WriteLine();
+                Output.Write();
+                Output.Write("----------------------------------------------------");
+                Output.Write("Proxy generation completed....");
+                Output.Write($"Time Taken: {appStopwatch.Elapsed.ToString()}");
                 return ExitApplication(0);
             }
             catch (AggregateException aex)
             {
                 foreach (Exception ex in aex.InnerExceptions)
                 {
-                    Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
-                    Console.WriteLine("StackTrace: {0}", ex.StackTrace);
-                    Console.WriteLine();
+                    Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
+                    Output.Write("StackTrace: {ex.StackTrace}");
+                    Output.Write();
                 }
 
-                Console.WriteLine("Exiting Proxy Generator.");
+                Output.Write("Exiting Proxy Generator.");
                 return ExitApplication(1);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An exception has occured: {1} - {0}", ex.Message, ex.GetType());
-                Console.WriteLine("StackTrace: {0}", ex.StackTrace);
-                Console.WriteLine();
-                Console.WriteLine("Exiting Proxy Generator.");
+                Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
+                Output.Write("StackTrace: {ex.StackTrace}");
+                Output.Write();
+                Output.Write("Exiting Proxy Generator.");
                 return ExitApplication(1);
             }
         }
@@ -117,7 +129,7 @@ namespace Birch.Swagger.ProxyGenerator
                 return exitCode;
             }
 
-            Console.WriteLine("Press any key to continue...");
+            Output.Write("Press any key to continue...");
             Console.ReadKey();
             return exitCode;
         }
@@ -127,8 +139,8 @@ namespace Birch.Swagger.ProxyGenerator
             var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
             var exeBinDirectory = directoryName?.Replace(@"file:\", string.Empty) + @"\bin";
 
-            Console.WriteLine("Copying assembly xml comments to executable bin directory... \n{0}", exeBinDirectory);
-            Console.WriteLine();
+            Output.Debug($"Copying assembly xml comments to executable bin directory... \n{exeBinDirectory}");
+            Output.Debug();
             try
             {
                 var sourcePath = assemblyFile.Replace(".dll", ".xml");
@@ -141,12 +153,12 @@ namespace Birch.Swagger.ProxyGenerator
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Could not copy assembly xml file. Exception: {0}", ex.Message);
-                Console.WriteLine();
+                Output.Write($"Could not copy assembly xml file. Exception: {ex.Message}");
+                Output.Write();
             }
 
-            Console.WriteLine("Loading Owin Web API Assembly... \n{0}", assemblyFile);
-            Console.WriteLine();
+            Output.Debug($"Loading Owin Web API Assembly... \n{assemblyFile}");
+            Output.Debug();
             AppDomain.CurrentDomain.AssemblyResolve +=
                 (source, e) => CustomResolver(source, e, assemblyFile);
             var assembly = Assembly.LoadFrom(assemblyFile);
@@ -155,24 +167,25 @@ namespace Birch.Swagger.ProxyGenerator
                 .FirstOrDefault(x => x.AttributeType == typeof(OwinStartupAttribute));
             if (startupAttribute == null)
             {
-                Console.WriteLine("Could not locate OWIN startup class.");
+                Output.Write("Could not locate OWIN startup class.");
                 return 1;
             }
 
-            Console.WriteLine("Starting in memory server...");
-            Console.WriteLine();
+            Output.Write("Starting in memory server...");
+            
             var owinStartupClassType = (Type)startupAttribute.ConstructorArguments.First().Value;
             dynamic owinStartupClass = Activator.CreateInstance(owinStartupClassType);
             var testServer = TestServer.Create(builder => { owinStartupClass.Configuration(builder); });
 
-            Console.WriteLine("Generating Proxy...");
+            Output.Debug();
+            Output.Debug("Generating Proxy...");
             Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, proxyGeneratorNamespace, baseUrl, proxyGeneratorClassNamePrefix);
             return 0;
         }
 
         public static SwaggerApiProxySettings GetSettings(string path)
         {
-            Console.WriteLine("Getting settings from: {0}", path);
+            Output.Debug($"Getting settings from: {path}");
             using (var settingStream = File.OpenRead(path))
             {
                 var streamReader = new StreamReader(settingStream);
@@ -188,16 +201,16 @@ namespace Birch.Swagger.ProxyGenerator
             if (name.EndsWith(".XmlSerializers.dll"))
                 return null;
             var searchPath = string.Format("{1}\\{0}", name, Path.GetDirectoryName(assemblyFile));
-            Console.WriteLine("Resolving {0}", e.Name);
+            Output.Debug($"Resolving {e.Name}");
             Assembly assembly;
             try
             {
-                Console.WriteLine("Trying: {0}", searchPath);
+                Output.Debug($"Trying: {searchPath}" );
                 assembly = Assembly.LoadFrom(searchPath);
             }
             catch (Exception)
             {
-                Console.WriteLine("Returning null for assembly: {0}", name);
+                Output.Debug($"Returning null for assembly: {name}" );
                 assembly = null;
             }
 

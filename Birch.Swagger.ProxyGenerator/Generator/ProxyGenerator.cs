@@ -31,20 +31,19 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
             FileText = new StringBuilder();
 
-            Console.WriteLine();
-            Console.WriteLine("Requesting Swagger documents..");
+            Output.Write("Requesting Swagger documents..");
             List<Task> taskList = new List<Task>();
             foreach (var endPoint in endpoints)
             {
                 var requestUri = endPoint.Url.StartsWith(baseUrl)
                                      ? endPoint.Url
                                      : string.Format("{0}{1}", baseUrl, endPoint.Url);
-                Console.WriteLine("Requested: {0}", requestUri);
+                Output.Debug($"Requested: {requestUri}");
                 taskList.Add(GetEndpointSwaggerDoc(requestUri, endPoint));
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Waiting for Swagger documents to complete downloading...");
+            Output.Debug();
+            Output.Debug("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
             ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
@@ -56,20 +55,20 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
             FileText = new StringBuilder();
 
-            Console.WriteLine();
-            Console.WriteLine("Requesting Swagger documents..");
+            Output.Debug();
+            Output.Write("Requesting Swagger documents..");
             List<Task> taskList = new List<Task>();
             foreach (var endPoint in endpoints)
             {
                 endPoint.Url = endPoint.Url.StartsWith(baseUrl)
                                      ? endPoint.Url
                                      : string.Format("{0}{1}", baseUrl, endPoint.Url);
-                Console.WriteLine("Requested: {0}", endPoint.Url);
+                Output.Debug($"Requested: {endPoint.Url}");
                 taskList.Add(GetEndpointSwaggerDoc(testServer, endPoint, baseUrl));
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Waiting for Swagger documents to complete downloading...");
+            Output.Debug();
+            Output.Debug("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
             ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
@@ -77,8 +76,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void ProcessSwaggerDocuments(string proxyOutputFile, string proxyGeneratorNamespace, string proxyGeneratorClassNamePrefix)
         {
-            Console.WriteLine();
-            Console.WriteLine("Processing Swagger documents...");
+            Output.Write();
+            Output.Write("Processing Swagger documents...");
 
             PrintHeaders(proxyGeneratorNamespace);
             AddBaseProxyAndClasses(proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
@@ -86,7 +85,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
                 var endPoint = swaggerDocDictionaryEntry.Key;
-                Console.WriteLine("Processing {0}", endPoint.Url);
+                Output.Write($"Processing {endPoint.Url}");
                 WriteLine(string.Format("// {0} Proxy", endPoint.Url));
 
                 string methodNameAppend = string.Empty;
@@ -714,7 +713,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             {
                 throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
             }
-            Console.WriteLine("Downloaded: {0}", endPoint.Url);
+            Output.Write($"Downloaded: {endPoint.Url}");
             _swaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
         }
 
@@ -727,7 +726,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 {
                     throw new Exception(string.Format("Error downloading from: (TestServer){0}", endPoint.Url));
                 }
-                Console.WriteLine("Downloaded: {0}", requestUri);
+                Output.Debug($"Downloaded: {requestUri}");
                 _swaggerDocDictionaryList.GetOrAdd(endPoint, swaggerString);
             }
         }
