@@ -153,6 +153,10 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                             foreach (var prop in properties)
                             {
                                 var type = ParseType(prop);
+                                if (type.EnumValues != null && type.EnumValues.Any() && type.IsNullableType)
+                                {
+                                    type.TypeName += "?";
+                                }
                                 classDefinition.Properties.Add(type);
                             }
                         }
@@ -166,6 +170,10 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                         foreach (var prop in properties)
                         {
                             var type = ParseType(prop);
+                            if (type.EnumValues != null && type.EnumValues.Any() && type.IsNullableType)
+                            {
+                                type.TypeName += "?";
+                            }
                             classDefinition.Properties.Add(type);
                         }
                     }
@@ -276,7 +284,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             {
                 return FixTypeName(GetTypeName(schema, out isNullable));
             }
-
+            
             var type = token["type"] as JValue;
             if (type == null)
             {
@@ -313,7 +321,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 var format = token["format"] as JValue;
                 if (format == null)
                 {
-                    isNullable = false;
+                    isNullable = hasNullFlag;
                     return "string";
                 }
 
