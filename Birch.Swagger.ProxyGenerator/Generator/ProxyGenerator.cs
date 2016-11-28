@@ -310,151 +310,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                             methodNameAppend,
                             parameters));
                     WriteLine("{");
-
-                    WriteLine(operationDef.Path.StartsWith("/")
-                        ? string.Format("var url = \"{0}\"", operationDef.Path.Substring(1))
-                        : string.Format("var url = \"{0}\"", operationDef.Path));
-
-                    foreach (var parameter in operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Path))
-                    {
-                        WriteLine(string.Format("\t.Replace(\"{{{0}}}\", {0}.ToString())", parameter.Type.GetCleanTypeName()));
-                    }
-                    WriteLine(";");
-
-                    var queryParams = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Query).ToList();
-                    if (queryParams.Count > 0)
-                    {
-                        foreach (var parameter in queryParams)
-                        {
-                            if (parameter.IsRequired == false && parameter.DefaultValue == "null" &&
-                                (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
-                            {
-                                WriteNullIfStatementOpening(parameter.Type.GetCleanTypeName(), parameter.Type.TypeName);
-                            }
-
-                            if (string.IsNullOrWhiteSpace(parameter.CollectionFormat) == false)
-                            {
-                                // array
-                                if (parameter.CollectionFormat.Equals("csv", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", string.Join(\",\", {1}));",
-                                            parameter.Type.Name,
-                                            parameter.Type.GetCleanTypeName()));
-                                }
-                                else if (parameter.CollectionFormat.Equals("ssv", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", string.Join(\" \", {1}));",
-                                            parameter.Type.Name,
-                                            parameter.Type.GetCleanTypeName()));
-                                }
-                                else if (parameter.CollectionFormat.Equals("tsv", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
-                                            parameter.Type.Name,
-                                            parameter.Type.GetCleanTypeName()));
-                                }
-                                else if (parameter.CollectionFormat.Equals("pipes", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
-                                            parameter.Type.Name,
-                                            parameter.Type.GetCleanTypeName()));
-                                }
-                                else if (parameter.CollectionFormat.Equals("multi", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    WriteLine(string.Format("foreach(var item in {0})", parameter.Type.GetCleanTypeName()));
-                                    WriteLine("{");
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", item.ToString());",
-                                            parameter.Type.Name));
-                                    WriteLine("}");
-                                }
-                                else
-                                {
-                                    WriteLine(
-                                        string.Format(
-                                            "url = AppendQuery(url, \"{0}\", {1}.ToString());",
-                                            parameter.Type.Name,
-                                            parameter.Type.GetCleanTypeName()));
-                                }
-                            }
-                            else
-                            {
-                                WriteLine(
-                                    string.Format(
-                                        "url = AppendQuery(url, \"{0}\", {1}.ToString());",
-                                        parameter.Type.Name,
-                                        parameter.Type.GetCleanTypeName()));
-                            }
-
-                            if (parameter.IsRequired == false && parameter.DefaultValue == "null" &&
-                                (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
-                            {
-                                WriteLine("}");
-                            }
-                        }
-                    }
-                    var hasFormData = operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData);
-                    var bodyParam = operationDef.Parameters
-                                .FirstOrDefault(i => i.ParameterIn == ParameterIn.Body);
-                    var bodyParamText = bodyParam != null ? $", {bodyParam.Type.Name}" : string.Empty;
-                    var returnText = string.IsNullOrWhiteSpace(returnType) ? string.Empty : "return ";
-                    Func<string, string> action = a =>
-                        $"{returnText}await {a}{returnType}(url, \"{actionName}\"{bodyParamText}).ConfigureAwait(false);";
-
-
-                    switch (operationDef.Method.ToUpperInvariant())
-                    {
-                        case "GET":
-                            WriteLine(action.Invoke("Get"));
-                            break;
-
-                        case "DELETE":
-                            WriteLine(action.Invoke("Delete"));
-                            break;
-
-                        case "PUT":
-                            if (bodyParam != null)
-                            {
-                                WriteLine(action.Invoke("Put"));
-                            }
-                            else if (hasFormData)
-                            {
-                                WriteStartRequest(operationDef);
-                                ProcessFormData(operationDef, "Put");
-                                WriteEndRequest(returnType, operationDef);
-                            }
-                            else
-                            {
-                                WriteLine(action.Invoke("Put"));
-                            }
-                            break;
-
-                        case "POST":
-                            if (bodyParam != null)
-                            {
-                                WriteLine(action.Invoke("Post"));
-                            }
-                            else if (hasFormData)
-                            {
-                                WriteStartRequest(operationDef);
-                                ProcessFormData(operationDef, "Post");
-                                WriteEndRequest(returnType, operationDef);
-                            }
-                            else
-                            {
-                                WriteLine(action.Invoke("Post"));
-                            }
-                            break;
-                    }
+                    WriteUrl(operationDef);
+                    WriteActionMethodInvoke(operationDef, returnType, actionName);
                     WriteLine("}"); // close up the method
                     WriteLine();
                 }
@@ -475,6 +332,150 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 WriteLine("}");
                 WriteLine();
             }
+        }
+
+        private static void WriteUrl(Operation operationDef)
+        {
+            WriteLine(operationDef.Path.StartsWith("/")
+                ? string.Format("var url = \"{0}\"", operationDef.Path.Substring(1))
+                : string.Format("var url = \"{0}\"", operationDef.Path));
+
+            foreach (var parameter in operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Path))
+            {
+                WriteLine(string.Format("\t.Replace(\"{{{0}}}\", {0}.ToString())", parameter.Type.GetCleanTypeName()));
+            }
+            WriteLine(";");
+
+            var queryParams = operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Query).ToList();
+            if (queryParams.Count > 0)
+            {
+                foreach (var parameter in queryParams)
+                {
+                    if (parameter.IsRequired == false && parameter.DefaultValue == "null" &&
+                        (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
+                    {
+                        WriteNullIfStatementOpening(parameter.Type.GetCleanTypeName(), parameter.Type.TypeName);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(parameter.CollectionFormat) == false)
+                    {
+                        // array
+                        if (parameter.CollectionFormat.Equals("csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", string.Join(\",\", {1}));",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName()));
+                        }
+                        else if (parameter.CollectionFormat.Equals("ssv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", string.Join(\" \", {1}));",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName()));
+                        }
+                        else if (parameter.CollectionFormat.Equals("tsv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName()));
+                        }
+                        else if (parameter.CollectionFormat.Equals("pipes", StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", string.Join(\"\t\", {1}));",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName()));
+                        }
+                        else if (parameter.CollectionFormat.Equals("multi", StringComparison.OrdinalIgnoreCase))
+                        {
+                            WriteLine(string.Format("foreach(var item in {0})", parameter.Type.GetCleanTypeName()));
+                            WriteLine("{");
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", item.ToString());",
+                                    parameter.Type.Name));
+                            WriteLine("}");
+                        }
+                        else
+                        {
+                            WriteLine(
+                                string.Format(
+                                    "url = AppendQuery(url, \"{0}\", {1}.ToString());",
+                                    parameter.Type.Name,
+                                    parameter.Type.GetCleanTypeName()));
+                        }
+                    }
+                    else
+                    {
+                        WriteLine(
+                            string.Format(
+                                "url = AppendQuery(url, \"{0}\", {1}.ToString());",
+                                parameter.Type.Name,
+                                parameter.Type.GetCleanTypeName()));
+                    }
+
+                    if (parameter.IsRequired == false && parameter.DefaultValue == "null" &&
+                        (parameter.Type.EnumValues == null || parameter.Type.EnumValues.Any() == false))
+                    {
+                        WriteLine("}");
+                    }
+                }
+            }
+        }
+
+        private static void WriteActionMethodInvoke(Operation operationDef, string returnType, string actionName)
+        {
+            var hasFormData = operationDef.Parameters.Any(i => i.ParameterIn == ParameterIn.FormData);
+            var bodyParam = operationDef.Parameters.FirstOrDefault(i => i.ParameterIn == ParameterIn.Body);
+            var bodyParamText = bodyParam != null ? $", {bodyParam.Type.Name}" : string.Empty;
+            var returnText = string.IsNullOrWhiteSpace(returnType) ? string.Empty : "return ";
+            switch (operationDef.Method.ToUpperInvariant())
+            {
+                case "GET":
+                    WriteLine(GetActionString("Get", returnType, actionName, returnText, bodyParamText));
+                    break;
+
+                case "DELETE":
+                    WriteLine(GetActionString("Delete", returnType, actionName, returnText, bodyParamText));
+                    break;
+
+                case "PUT":
+                    if (hasFormData)
+                    {
+                        WriteStartRequest(operationDef);
+                        ProcessFormData(operationDef, "Put");
+                        WriteEndRequest(returnType, operationDef);
+                    }
+                    else
+                    {
+                        WriteLine(GetActionString("Put", returnType, actionName, returnText, bodyParamText));
+                    }
+                    break;
+
+                case "POST":
+                    if (hasFormData)
+                    {
+                        WriteStartRequest(operationDef);
+                        ProcessFormData(operationDef, "Post");
+                        WriteEndRequest(returnType, operationDef);
+                    }
+                    else
+                    {
+                        WriteLine(GetActionString("Post", returnType, actionName, returnText, bodyParamText));
+                    }
+                    break;
+            }
+        }
+
+        private static string GetActionString(string method, string returnType, string actionName, string returnText, string bodyParamText)
+        {
+            return $"{returnText}await {method}{returnType}(url, \"{actionName}\"{bodyParamText}).ConfigureAwait(false);";
         }
 
         private static void WriteEndRequest(string returnType, Operation operationDef)
