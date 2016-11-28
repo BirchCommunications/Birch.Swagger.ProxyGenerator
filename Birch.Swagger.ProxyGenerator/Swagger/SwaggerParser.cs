@@ -121,7 +121,30 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                                 collectionFormat = collectionFormatToken.ToString();
                             }
 
-                            parameters.Add(new Parameter(type, parameterIn, isRequired, propDescription, collectionFormat));
+                            string propDefaultValue = "null";
+                            if (!type.IsNullableType
+                                && collectionFormat != "multi"
+                                && type.EnumValues != null
+                                && type.EnumValues.Any())
+                            {
+                                propDefaultValue = $"{type.TypeName}.{type.EnumValues.FirstOrDefault()}";
+                            }
+
+                            var propDefaultValueToken = prop["default"];
+                            if (propDefaultValueToken != null)
+                            {
+                                propDefaultValue = propDefaultValueToken.ToString();
+                                if (type.TypeName == "bool")
+                                {
+                                    propDefaultValue = propDefaultValue.ToLower();
+                                }
+                                if (type.TypeName == "string")
+                                {
+                                    propDefaultValue = $"\"{propDefaultValueToken}\"";
+                                }
+                            }
+
+                            parameters.Add(new Parameter(type, parameterIn, isRequired, propDescription, collectionFormat, propDefaultValue));
                         }
                     }
 
@@ -153,7 +176,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                             foreach (var prop in properties)
                             {
                                 var type = ParseType(prop);
-                                if (type.EnumValues != null && type.EnumValues.Any() && type.IsNullableType)
+                                if (type.IsNullableType)
                                 {
                                     type.TypeName += "?";
                                 }
@@ -272,10 +295,10 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
         {
 
             var refType = token["$ref"] as JValue;
-            bool hasNullFlag = false;
+            isNullable = false;
+
             if (refType != null)
             {
-                isNullable = false;
                 return FixTypeName(ParseRef(refType.Value.ToString()));
             }
 
@@ -284,18 +307,17 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             {
                 return FixTypeName(GetTypeName(schema, out isNullable));
             }
-            
+
             var type = token["type"] as JValue;
             if (type == null)
             {
-                isNullable = false;
                 return null;
             }
 
             var nullableToken = token["x-nullable"] as JValue;
             if (nullableToken != null)
             {
-                hasNullFlag = true;
+                isNullable = true;
             }
 
             if (type.Value.Equals("array"))
@@ -307,8 +329,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             }
             if (type.Value.Equals("boolean"))
             {
-                isNullable = true;
-                return (hasNullFlag) ? "bool?" : "bool";
+                return (isNullable) ? "bool?" : "bool";
             }
 
             if (type.Value.Equals("file"))
@@ -321,21 +342,17 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 var format = token["format"] as JValue;
                 if (format == null)
                 {
-                    isNullable = hasNullFlag;
                     return "string";
                 }
 
-
                 if (format.Value.Equals("date") || format.Value.Equals("date-time"))
                 {
-                    isNullable = true;
-                    return (hasNullFlag) ? "DateTime?" : "DateTime";
+                    return (isNullable) ? "DateTime?" : "DateTime";
                 }
 
                 if (format.Value.Equals("byte"))
                 {
-                    isNullable = true;
-                    return (hasNullFlag) ? "byte?" : "byte";
+                    return (isNullable) ? "byte?" : "byte";
                 }
 
                 isNullable = false;
@@ -344,35 +361,33 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
 
             if (type.Value.Equals("integer"))
             {
-                isNullable = true;
                 var format = token["format"] as JValue;
                 if (format != null)
                 {
                     if (format.Value.Equals("int32"))
-                        return (hasNullFlag) ? "int?" : "int";
+                        return (isNullable) ? "int?" : "int";
 
 
                     if (format.Value.Equals("int64"))
-                        return (hasNullFlag) ? "long?" : "long";
+                        return (isNullable) ? "long?" : "long";
                 }
 
-                return "int";
+                return (isNullable) ? "int?" : "int";
             }
 
             if (type.Value.Equals("number"))
             {
-                isNullable = true;
                 var format = token["format"] as JValue;
                 if (format != null)
                 {
                     if (format.Value.Equals("float"))
-                        return (hasNullFlag) ? "float?" : "float";
+                        return (isNullable) ? "float?" : "float";
 
                     if (format.Value.Equals("double"))
-                        return (hasNullFlag) ? "double?" : "double";
+                        return (isNullable) ? "double?" : "double";
 
                     if (format.Value.Equals("decimal"))
-                        return (hasNullFlag) ? "decimal?" : "decimal";
+                        return (isNullable) ? "decimal?" : "decimal";
                 }
             }
 
