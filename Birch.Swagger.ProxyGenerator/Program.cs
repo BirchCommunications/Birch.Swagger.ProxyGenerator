@@ -14,7 +14,7 @@ namespace Birch.Swagger.ProxyGenerator
 {
     public static class Output
     {
-        public static bool Verbose { get; set; } = false;
+        public static bool Verbose { get; set; }
         public static void Write(string s = null) => Console.WriteLine(s);
         public static void Debug(string s = null)
         {
@@ -29,60 +29,18 @@ namespace Birch.Swagger.ProxyGenerator
         {
             Output.Debug("Birch.Swagger.ProxyGenerator Started...");
             Output.Debug();
-            // check for switch values
-            var assemblyFile = string.Empty;
-            var proxyOutputFile = string.Empty;
-            var baseUrl = string.Empty;
-            var proxyGeneratorNamespace = string.Empty;
-            var proxyGeneratorClassNamePrefix = string.Empty;
-            var settingsFile = string.Empty;
-            if (args.Any())
-            {
-                for (var i = 0; i < args.Length; i++)
-                {
-                    var argument = args[i].ToLower();
-                    if (argument == "-settingsfile")
-                    {
-                        settingsFile = args[i + 1];
-                    }
-                    else if(argument == "-proxygeneratornamespace")
-                    {
-                        proxyGeneratorNamespace = args[i + 1];
-                    }
-                    else if (argument == "-webapiassembly")
-                    {
-                        assemblyFile = args[i + 1];
-                    }
-                    else if (argument == "-proxygeneratorclassnameprefix")
-                    {
-                        proxyGeneratorClassNamePrefix = args[i + 1];
-                    }
-                    else if (argument == "-proxyoutputfile")
-                    {
-                        proxyOutputFile = args[i + 1];
-                    }
-                    else if (argument == "-baseurl")
-                    {
-                        baseUrl = args[i + 1];
-                    }
-                    else if (argument == "-verbose")
-                    {
-                        Output.Verbose = true;
-                    }
-                }
-            }
-
-            var settings = GetSettings(settingsFile);
-            var endpoints = settings.EndPoints;
+            
+            // get settings
+            var settings = Generator.ProxyGenerator.GetSettings(args);
 
             var appStopwatch = new Stopwatch();
             appStopwatch.Start();
             try
             {
                 // Run generator against provided assmbly file or baseUrl
-                if (!string.IsNullOrWhiteSpace(assemblyFile))
+                if (!string.IsNullOrWhiteSpace(settings.WebApiAssembly))
                 {
-                    var processInMemoryStatus = ProcessInMemory(assemblyFile, proxyOutputFile, endpoints, proxyGeneratorNamespace, baseUrl, proxyGeneratorClassNamePrefix);
+                    var processInMemoryStatus = ProcessInMemory(settings);
                     if (processInMemoryStatus != 0)
                     {
                         return ExitApplication(processInMemoryStatus);
@@ -90,14 +48,14 @@ namespace Birch.Swagger.ProxyGenerator
                 }
                 else
                 {
-                    Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, baseUrl, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
+                    Generator.ProxyGenerator.Generate(settings);
                 }
 
                 // All done
                 Output.Write();
                 Output.Write("----------------------------------------------------");
                 Output.Write("Proxy generation completed....");
-                Output.Write($"Time Taken: {appStopwatch.Elapsed.ToString()}");
+                Output.Write($"Time Taken: {appStopwatch.Elapsed}");
                 return ExitApplication(0);
             }
             catch (AggregateException aex)
@@ -105,7 +63,7 @@ namespace Birch.Swagger.ProxyGenerator
                 foreach (Exception ex in aex.InnerExceptions)
                 {
                     Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
-                    Output.Write("StackTrace: {ex.StackTrace}");
+                    Output.Write($"StackTrace: {ex.StackTrace}");
                     Output.Write();
                 }
 
@@ -115,7 +73,7 @@ namespace Birch.Swagger.ProxyGenerator
             catch (Exception ex)
             {
                 Output.Write($"An exception has occured: {ex.GetType()} - {ex.Message}");
-                Output.Write("StackTrace: {ex.StackTrace}");
+                Output.Write($"StackTrace: {ex.StackTrace}");
                 Output.Write();
                 Output.Write("Exiting Proxy Generator.");
                 return ExitApplication(1);
@@ -134,13 +92,14 @@ namespace Birch.Swagger.ProxyGenerator
             return exitCode;
         }
 
-        private static int ProcessInMemory(string assemblyFile, string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string proxyGeneratorNamespace, string baseUrl, string proxyGeneratorClassNamePrefix)
+        private static int ProcessInMemory(SwaggerApiProxySettings settings)
         {
             var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
             var exeBinDirectory = directoryName?.Replace(@"file:\", string.Empty) + @"\bin";
 
             Output.Debug($"Copying assembly xml comments to executable bin directory... \n{exeBinDirectory}");
             Output.Debug();
+            var assemblyFile = settings.WebApiAssembly;
             try
             {
                 var sourcePath = assemblyFile.Replace(".dll", ".xml");
@@ -179,21 +138,10 @@ namespace Birch.Swagger.ProxyGenerator
 
             Output.Debug();
             Output.Debug("Generating Proxy...");
-            Generator.ProxyGenerator.Generate(proxyOutputFile, endpoints, testServer, proxyGeneratorNamespace, baseUrl, proxyGeneratorClassNamePrefix);
+            Generator.ProxyGenerator.Generate(testServer, settings);
             return 0;
         }
-
-        public static SwaggerApiProxySettings GetSettings(string path)
-        {
-            Output.Debug($"Getting settings from: {path}");
-            using (var settingStream = File.OpenRead(path))
-            {
-                var streamReader = new StreamReader(settingStream);
-                var value = streamReader.ReadToEnd();
-                return JsonConvert.DeserializeObject<SwaggerApiProxySettings>(value);
-            }
-        }
-
+        
         // ReSharper disable once UnusedParameter.Local
         static Assembly CustomResolver(object source, ResolveEventArgs e, string assemblyFile)
         {

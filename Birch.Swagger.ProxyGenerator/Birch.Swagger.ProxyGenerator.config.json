@@ -1,11 +1,13 @@
 ﻿{
-  "AutoRunOnBuildDisabled": "false",
+  "AutoRunOnBuildDisabled": "false", // Default: false
   "BaseUrl": "http://petstore.swagger.io/", // Default: http://mydomain.com
   "ProxyGeneratorClassNamePrefix": "", // Default: ProxyGenerator (ProxyGeneratorBaseClass)
   "ProxyGeneratorNamespace": "", // Default: Birch.Swagger.ProxyGenerator
   "ProxyOutputFile": "", // Default: SwaggerProxy.cs
   "WebApiAssembly": "", // If specified will ignore BaseUrl and load Owin Assembly in memory.
   "WebApiConfig": "", // Default: web.config
+  "ProxyConstructorSuffix": "", // Constructor suffix to be used when generating proxy. Default: (Uri baseUrl) : base(baseUrl)
+  "ExcludedHeaderParameters": [], // optional list of header parameters to exclude from methods (example: global auth header parameter that is added to every method but handled in base proxy.)
   "EndPoints": [
     {
       "AppendAsyncToMethodName": "true", // Determines if "Async" suffic should be included on generated method names.
@@ -13,9 +15,11 @@
       "Id": "SwaggerPetStore", // Id to be uesed in namespace
       "Namespace": "", // Default: {ProxyGeneratorNamespace}.{Id} Note: {ProxyGeneratorNamespace} is always used as a suffix
       "ParseOperationIdForProxyName": "true", // Uses the swagger operationId else uses swagger tags
-      "ProxyConstructorSuffix": "(Uri baseUrl) : base(baseUrl)", // Constructor suffix to be used when generating proxy
+      "ProxyConstructorSuffix": "", // Constructor suffix to be used when generating proxy. Default: parent ProxyConstructorSuffix
       "Suffix": "WebProxy", // Suffix to append to generated class name
-      "Url": "v2/swagger.json" // Url to swagger spec {BaseUrl}{Url}
+      "Url": "v2/swagger.json", // Url to swagger spec {BaseUrl}{Url}
+      "ExcludedOperationIds": [], // optional list of header parameters to exclude from methods (example: global auth header parameter that is added to every method but handled in base proxy.)
+      "ExcludedHeaderParameters": [] // optional list of header parameters to exclude from methods (example: global auth header parameter that is added to every method but handled in base proxy.)
     }
   ]
 }

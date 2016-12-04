@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,21 +16,167 @@ using Birch.Swagger.ProxyGenerator.Swagger;
 
 using Microsoft.CSharp;
 using Microsoft.Owin.Testing;
+using Newtonsoft.Json;
 
 namespace Birch.Swagger.ProxyGenerator.Generator
 {
     [SuppressMessage("ReSharper", "UseStringInterpolation")]
-    internal static class ProxyGenerator
+    public static class ProxyGenerator
     {
         private static StringBuilder FileText { get; set; }
         private static int TextPadding { get; set; }
         private static int ActionCount { get; set; }
+        private static int InvalidActionCount { get; set; }
+        private static List<string> InvalidActions { get; } = new List<string>();
+
+        private static List<string> ExcludedActions { get; } = new List<string>();
+        private static int ExcludedActionCount { get; set; }
         private static int ClassCount { get; set; }
         private static int ModelCount { get; set; }
+        private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList =
+            new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
 
-        private static ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string> _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
+        public static SwaggerApiProxySettings GetSettings(string[] args)
+        {
+            // base directory is exe directory unless switch override
+            var baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
+                ?.Replace(@"file:\", string.Empty);
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, string baseUrl, string proxyGeneratorNamespace, string proxyGeneratorClassNamePrefix)
+            var settingsFile = string.Empty;
+
+            for (var i = 0; i < args.Length; i++)
+            {
+                var argument = args[i].ToLower();
+                if (argument == "-settingsfile")
+                {
+                    settingsFile = args[i + 1];
+                }
+                else if (argument == "-basedirectory")
+                {
+                    baseDirectory = args[i + 1];
+                }
+                else if (argument == "-verbose")
+                {
+                    Output.Verbose = true;
+                }
+            }
+
+            // check for base directory
+            if (string.IsNullOrWhiteSpace(baseDirectory))
+            {
+                throw new ArgumentException("Could not determine base directory,");
+            }
+            Output.Debug($"Base Directory: {baseDirectory}");
+            var combine = Path.Combine(baseDirectory, "Birch.Swagger.ProxyGenerator.config.json");
+            if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
+            {
+                settingsFile = combine;
+            }
+
+            if (string.IsNullOrWhiteSpace(settingsFile))
+            {
+                Output.Write(
+                    "Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
+                    + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
+                Output.Write();
+                Output.Write("Exiting Proxy Generator.");
+                throw new Exception("No configuration file found.");
+            }
+
+            Output.Debug($"Loading settings from: {settingsFile}");
+            using (var settingStream = File.OpenRead(settingsFile))
+            {
+                // load settings from settings file
+                var streamReader = new StreamReader(settingStream);
+                var value = streamReader.ReadToEnd();
+                var swaggerApiProxySettings = JsonConvert.DeserializeObject<SwaggerApiProxySettings>(value);
+                swaggerApiProxySettings.BaseDirectory = baseDirectory;
+
+                // Command line arguments should override settings from file.
+                for (var i = 0; i < args.Length; i++)
+                {
+                    var argument = args[i].ToLower();
+                    var argumentValueIndex = i + 1;
+                    if (argument == "-proxygeneratornamespace")
+                    {
+                        swaggerApiProxySettings.ProxyGeneratorNamespace = args[argumentValueIndex];
+                    }
+                    else if (argument == "-webapiassembly")
+                    {
+                        swaggerApiProxySettings.WebApiAssembly = args[argumentValueIndex];
+                    }
+                    else if (argument == "-webapiconfig")
+                    {
+                        swaggerApiProxySettings.WebApiConfig = args[argumentValueIndex];
+                    }
+                    else if (argument == "-autorun")
+                    {
+                        swaggerApiProxySettings.AutoRunOnBuildDisabled = false;
+                    }
+                    else if (argument == "-proxygeneratorclassnameprefix")
+                    {
+                        swaggerApiProxySettings.ProxyGeneratorClassNamePrefix = args[argumentValueIndex];
+                    }
+                    else if (argument == "-proxyoutputfile")
+                    {
+                        swaggerApiProxySettings.ProxyOutputFile = args[argumentValueIndex];
+                    }
+                    else if (argument == "-baseurl")
+                    {
+                        swaggerApiProxySettings.BaseUrl = args[argumentValueIndex];
+                    }
+                }
+
+                // restore defaults that may have been set to null or empty during json serialization
+                var defaultSettings = new SwaggerApiProxySettings();
+                if (string.IsNullOrWhiteSpace(swaggerApiProxySettings.WebApiConfig))
+                {
+                    swaggerApiProxySettings.WebApiConfig = defaultSettings.WebApiConfig;
+                }
+                if (string.IsNullOrWhiteSpace(swaggerApiProxySettings.ProxyOutputFile))
+                {
+                    swaggerApiProxySettings.ProxyOutputFile = defaultSettings.ProxyOutputFile;
+                }
+                if (string.IsNullOrWhiteSpace(swaggerApiProxySettings.ProxyGeneratorClassNamePrefix))
+                {
+                    swaggerApiProxySettings.ProxyGeneratorClassNamePrefix = defaultSettings.ProxyGeneratorClassNamePrefix;
+                }
+                if (string.IsNullOrWhiteSpace(swaggerApiProxySettings.ProxyGeneratorNamespace))
+                {
+                    swaggerApiProxySettings.ProxyGeneratorNamespace = defaultSettings.ProxyGeneratorNamespace;
+                }
+                if (string.IsNullOrWhiteSpace(swaggerApiProxySettings.ProxyConstructorSuffix))
+                {
+                    swaggerApiProxySettings.ProxyConstructorSuffix = defaultSettings.ProxyConstructorSuffix;
+                }
+
+
+                // update undefined endpoint ProxyConstructorSuffix with value of swaggerApiProxySettings.ProxyConstructorSuffix
+                foreach (var swaggerApiProxySettingsEndPoint in swaggerApiProxySettings.EndPoints.Where(e => string.IsNullOrWhiteSpace(e.ProxyConstructorSuffix)))
+                {
+                    swaggerApiProxySettingsEndPoint.ProxyConstructorSuffix =
+                        swaggerApiProxySettings.ProxyConstructorSuffix;
+                }
+
+                // allow relative paths
+                if (!string.IsNullOrWhiteSpace(swaggerApiProxySettings.WebApiAssembly))
+                {
+                    swaggerApiProxySettings.WebApiAssembly = Path.IsPathRooted(swaggerApiProxySettings.WebApiAssembly)
+                        ? swaggerApiProxySettings.WebApiAssembly
+                        : Path.GetFullPath(Path.Combine(baseDirectory, swaggerApiProxySettings.WebApiAssembly));
+                }
+                swaggerApiProxySettings.ProxyOutputFile = Path.IsPathRooted(swaggerApiProxySettings.ProxyOutputFile)
+                    ? swaggerApiProxySettings.ProxyOutputFile
+                    : Path.GetFullPath(Path.Combine(baseDirectory, swaggerApiProxySettings.ProxyOutputFile));
+                swaggerApiProxySettings.WebApiConfig = Path.IsPathRooted(swaggerApiProxySettings.WebApiConfig)
+                    ? swaggerApiProxySettings.WebApiConfig
+                    : Path.GetFullPath(Path.Combine(swaggerApiProxySettings.BaseDirectory, swaggerApiProxySettings.WebApiConfig));
+
+                return swaggerApiProxySettings;
+            }
+        }
+
+        public static void Generate(SwaggerApiProxySettings settings)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -37,8 +184,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
             Output.Write("Requesting Swagger documents..");
             List<Task> taskList = new List<Task>();
-            foreach (var endPoint in endpoints)
+            foreach (var endPoint in settings.EndPoints)
             {
+                var baseUrl = settings.BaseUrl;
                 var requestUri = endPoint.Url.StartsWith(baseUrl)
                                      ? endPoint.Url
                                      : string.Format("{0}{1}", baseUrl, endPoint.Url);
@@ -50,10 +198,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Output.Debug("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
+            ProcessSwaggerDocuments(settings);
         }
 
-        public static void Generate(string proxyOutputFile, SwaggerApiProxySettingsEndPoint[] endpoints, TestServer testServer, string proxyGeneratorNamespace, string baseUrl, string proxyGeneratorClassNamePrefix)
+        public static void Generate(TestServer testServer, SwaggerApiProxySettings settings)
         {
             // init
             _swaggerDocDictionaryList = new ConcurrentDictionary<SwaggerApiProxySettingsEndPoint, string>();
@@ -62,8 +210,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Output.Debug();
             Output.Write("Requesting Swagger documents..");
             List<Task> taskList = new List<Task>();
-            foreach (var endPoint in endpoints)
+            foreach (var endPoint in settings.EndPoints)
             {
+                var baseUrl = settings.BaseUrl;
                 endPoint.Url = endPoint.Url.StartsWith(baseUrl)
                                      ? endPoint.Url
                                      : string.Format("{0}{1}", baseUrl, endPoint.Url);
@@ -75,16 +224,19 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             Output.Debug("Waiting for Swagger documents to complete downloading...");
             Task.WaitAll(taskList.ToArray());
 
-            ProcessSwaggerDocuments(proxyOutputFile, proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
+            ProcessSwaggerDocuments(settings);
         }
 
-        private static void ProcessSwaggerDocuments(string proxyOutputFile, string proxyGeneratorNamespace, string proxyGeneratorClassNamePrefix)
+        private static void ProcessSwaggerDocuments(SwaggerApiProxySettings settings)
         {
             Output.Write();
             Output.Write("Processing Swagger documents...");
 
-            WriteUsingStatements(proxyGeneratorNamespace);
-            WriteBaseProxyAndClasses(proxyGeneratorNamespace, proxyGeneratorClassNamePrefix);
+            var proxyGeneratorNameSpace = settings.ProxyGeneratorNamespace;
+            var proxyGeneratorClassNamePrefix = settings.ProxyGeneratorClassNamePrefix;
+
+            WriteUsingStatements(proxyGeneratorNameSpace);
+            WriteBaseProxyAndClasses(proxyGeneratorNameSpace, proxyGeneratorClassNamePrefix);
 
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
@@ -101,11 +253,11 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
                 var result = swaggerDocDictionaryEntry.Value;
                 var parser = new SwaggerParser();
-                var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint.ParseOperationIdForProxyName);
+                var proxyDefinition = parser.ParseSwaggerDoc(result, endPoint, settings);
                 var namespaceSuffix = string.IsNullOrWhiteSpace(endPoint.Namespace)
                     ? endPoint.Id
                     : endPoint.Namespace;
-                var endpointNamespace = string.Format("{0}.{1}", proxyGeneratorNamespace, namespaceSuffix);
+                var endpointNamespace = string.Format("{0}.{1}", proxyGeneratorNameSpace, namespaceSuffix);
                 var proxies = proxyDefinition.Operations.Select(i => i.ProxyName).Distinct().ToList();
 
                 // start namespace def
@@ -126,7 +278,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
             var condense = ConfigurationManager.AppSettings["proxy-generator:condense"] == null
                 || ConfigurationManager.AppSettings["proxy-generator:condense"].ToLower() == "true";
-            WriteFile(proxyOutputFile, condense);
+            WriteFile(settings.ProxyOutputFile, condense);
         }
 
         private static void WriteFile(string proxyOutputFile, bool condense)
@@ -136,13 +288,17 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 "// This file was generated by Birch.Swagger.ProxyGenerator",
                 "// Proxy Class Count: {{ProxyGenerator.ClassCount}}",
                 "// Proxy Action Count: {{ProxyGenerator.ActionCount}}",
+                "// Excluded Action Count: {{ProxyGenerator.ExcludedActionCount}}",
+                "// {{ProxyGenerator.ExcludedActions}}",
+                "// Invalid Action Count: {{ProxyGenerator.InvalidActionCount}}",
+                "// {{ProxyGenerator.ValidationMessages}}",
                 "// Proxy Model Count: {{ProxyGenerator.ModelCount}}",
                 "// Total Line Count: {{ProxyGenerator.TotalLineCount}}",
-                "// Comment Line Count: {{ProxyGenerator.CommentLineCount}}",
-                "// Summary Line Count: {{ProxyGenerator.SummaryLineCount}}",
-                "// Empty Line Count: {{ProxyGenerator.EmptyLineCount}}",
-                "// Bracket Only Line Count: {{ProxyGenerator.BracketLineCount}}",
-                "// ; Only Line Count: {{ProxyGenerator.SeicolonLineCount}}",
+                //"// Comment Line Count: {{ProxyGenerator.CommentLineCount}}", // this is really just debug info, no need to include in generated proxy
+                //"// Summary Line Count: {{ProxyGenerator.SummaryLineCount}}",
+                //"// Empty Line Count: {{ProxyGenerator.EmptyLineCount}}",
+                //"// Bracket Only Line Count: {{ProxyGenerator.BracketLineCount}}",
+                //"// ; Only Line Count: {{ProxyGenerator.SeicolonLineCount}}",
             };
             var fileText = $"{string.Join(Environment.NewLine, infoHeader)}{Environment.NewLine}{FileText.ToString().Trim()}";
 
@@ -150,12 +306,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             {
                 fileText = Regex.Replace(fileText, @"^\s*$[\r\n]*", "", RegexOptions.Multiline);
                 fileText = Regex.Replace(fileText, @"[\r\n]+\s*{", " {", RegexOptions.Multiline);
-                fileText = Regex.Replace(fileText, @"[\r\n]+\s*}", "}", RegexOptions.Multiline);
+                //fileText = Regex.Replace(fileText, @"[\r\n]+\s*}", "}", RegexOptions.Multiline); // commented out until we can get it not moving to a line with a comment
                 fileText = Regex.Replace(fileText, @"[\r\n]+\s*;", ";", RegexOptions.Multiline);
                 fileText = Regex.Replace(fileText, @"[\r\n]+\s*\.", ".", RegexOptions.Multiline);
             }
 
-            var lines = fileText.Split(new[] {Environment.NewLine}, StringSplitOptions.None);
+            var lines = fileText.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
             var totalLines = lines.Length;
             var commentCount = lines.Count(x => x.Trim().StartsWith("// "));
             var summaryCount = lines.Count(x => x.Trim().StartsWith("/// "));
@@ -168,14 +324,19 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             fileText = fileText
                 .Replace("{{ProxyGenerator.TotalLineCount}}", $"{totalLines}")
                 .Replace("{{ProxyGenerator.ClassCount}}", $"{classCount}")
+                .Replace("{{ProxyGenerator.ExcludedActions}}", $"{string.Join($"{Environment.NewLine}// ", ExcludedActions)}")
+                .Replace("{{ProxyGenerator.ValidationMessages}}", $"{string.Join($"{Environment.NewLine}// ", InvalidActions)}")
+                .Replace("{{ProxyGenerator.ActionCount}}", $"{actionCount}")
+                .Replace("{{ProxyGenerator.ExcludedActionCount}}", $"{ExcludedActionCount}")
+                .Replace("{{ProxyGenerator.InvalidActionCount}}", $"{InvalidActionCount}")
                 .Replace("{{ProxyGenerator.ActionCount}}", $"{actionCount}")
                 .Replace("{{ProxyGenerator.ModelCount}}", $"{modelCount}")
                 .Replace("{{ProxyGenerator.BracketLineCount}}",
-                    $"{bracketCount} ({((double) bracketCount/totalLines).ToString("0.00%")} of total)")
+                    $"{bracketCount} ({((double)bracketCount / totalLines).ToString("0.00%")} of total)")
                 .Replace("{{ProxyGenerator.CommentLineCount}}",
-                    $"{commentCount} ({((double) commentCount/totalLines).ToString("0.00%")} of total)")
+                    $"{commentCount} ({((double)commentCount / totalLines).ToString("0.00%")} of total)")
                 .Replace("{{ProxyGenerator.EmptyLineCount}}",
-                    $"{emptyCount} ({((double) emptyCount/totalLines).ToString("0.00%")} of total)")
+                    $"{emptyCount} ({((double)emptyCount / totalLines).ToString("0.00%")} of total)")
                 .Replace("{{ProxyGenerator.SummaryLineCount}}",
                     $"{summaryCount} ({((double)summaryCount / totalLines).ToString("0.00%")} of total)")
                 .Replace("{{ProxyGenerator.SeicolonLineCount}}",
@@ -259,6 +420,13 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 var proxy1 = proxy;
                 foreach (var operationDef in proxyDefinition.Operations.Where(i => i.ProxyName.Equals(proxy1)))
                 {
+                    var actionName = SwaggerParser.FixTypeName(operationDef.OperationId);
+
+                    var commentBegin = operationDef.IsExcluded ? "/*" : "//";
+                    WriteLine(!operationDef.IsValid || operationDef.IsExcluded
+                        ? $"{commentBegin} {actionName} : {string.Join(", ", operationDef.ValidationMessages)}"
+                        : string.Empty);
+
                     string returnType = string.IsNullOrEmpty(operationDef.ReturnType)
                         ? string.Empty
                         : string.Format("<{0}>", operationDef.ReturnType);
@@ -276,18 +444,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                         }
                     }
 
-                    string parameters = string.Join(
-                        ", ",
-                        operationDef.Parameters.OrderByDescending(i => i.IsRequired)
-                            .Select(
-                                x =>
-                                    (x.IsRequired == false)
-                                        ? string.Format(
-                                            "{0} {1} = {2}",
-                                            GetDefaultType(x),
-                                            x.Type.GetCleanTypeName(),
-                                            x.DefaultValue)
-                                        : string.Format("{0} {1}", GetDefaultType(x), x.Type.GetCleanTypeName())));
+                    var parameters = GetParametersString(operationDef, proxy);
 
                     WriteLine("/// <summary>");
                     var summary = (SecurityElement.Escape(operationDef.Description) ?? "").Replace(Environment.NewLine, $"{Environment.NewLine}///");
@@ -301,7 +458,6 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                                 parameter.Type.Name,
                                 (SecurityElement.Escape(parameter.Description) ?? "").Replace(Environment.NewLine, $"{Environment.NewLine}///")));
                     }
-                    var actionName = SwaggerParser.FixTypeName(operationDef.OperationId);
                     WriteLine(
                         string.Format(
                             "public async Task{0} {1}{2}({3})",
@@ -313,9 +469,12 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     WriteUrl(operationDef);
                     WriteActionMethodInvoke(operationDef, returnType, actionName);
                     WriteLine("}"); // close up the method
+                    if (operationDef.IsExcluded)
+                    {
+                        WriteLine("*/");
+                    }
                     WriteLine();
                 }
-
                 foreach (var proxyParamEnum in proxyParamEnums)
                 {
                     WriteLine(string.Format("public enum {0}", SwaggerParser.FixTypeName(proxyParamEnum.Name)));
@@ -332,6 +491,34 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 WriteLine("}");
                 WriteLine();
             }
+        }
+
+        private static string GetParametersString(Operation operationDef, string proxy)
+        {
+            var parameterList = operationDef.Parameters.Where(x => x.ParameterIn != ParameterIn.Header).OrderByDescending(i => i.IsRequired).ToList();
+            parameterList.AddRange(operationDef.Parameters.Where(x => x.ParameterIn == ParameterIn.Header));
+            string parameters = string.Join(
+                ", ",
+                parameterList.Select(
+                    x =>
+                    {
+                        var defaultType = GetDefaultType(x);
+
+                        if (x.Type.EnumValues != null)
+                        {
+                            var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
+                            defaultType = className + "." + defaultType;
+                            x.DefaultValue = defaultType + "." + x.DefaultValue;
+                        }
+                        return (x.IsRequired == false)
+                            ? string.Format(
+                                "{0} {1} = {2}",
+                                defaultType,
+                                x.Type.GetCleanTypeName(),
+                                x.DefaultValue)
+                            : string.Format("{0} {1}", defaultType, x.Type.GetCleanTypeName());
+                    }));
+            return parameters;
         }
 
         private static void WriteUrl(Operation operationDef)
@@ -552,37 +739,38 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     {
                         enumParam.Type.TypeName = operationDef.OperationId + enumParam.Type.Name;
                     }
-                    string parameters = string.Join(
-                        ", ",
-                        operationDef.Parameters.OrderByDescending(i => i.IsRequired)
-                            .Select(
-                                x =>
-                                {
-                                    var defaultType = GetDefaultType(x);
 
-                                    if (x.Type.EnumValues != null)
-                                    {
-                                        var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
-                                        defaultType = className + "." + defaultType;
-                                        x.DefaultValue = defaultType + "." + x.DefaultValue;
-                                    }
-                                    return (x.IsRequired == false)
-                                        ? string.Format(
-                                            "{0} {1} = {2}",
-                                            defaultType,
-                                            x.Type.GetCleanTypeName(),
-                                            x.DefaultValue)
-                                        : string.Format("{0} {1}", defaultType, x.Type.GetCleanTypeName());
-                                }));
+                    var fixedTypeName = SwaggerParser.FixTypeName(operationDef.OperationId);
 
-                    ActionCount++;
-                    WriteLine(
-                        string.Format(
-                            "Task{0} {1}{2}({3});",
+                    var parameters = GetParametersString(operationDef, proxy);
+
+                    if (!operationDef.IsValid)
+                    {
+                        InvalidActionCount++;
+                        InvalidActions.Add($"- {operationDef.OperationId}: {string.Join(", ", operationDef.ValidationMessages)}");
+                    }
+                    WriteLine(!operationDef.IsValid || operationDef.IsExcluded
+                        ? $"// {fixedTypeName} : {string.Join(", ", operationDef.ValidationMessages)}"
+                        : string.Empty);
+                    if (operationDef.IsExcluded)
+                    {
+                        ExcludedActions.Add($"- {operationDef.OperationId}");
+                        ExcludedActionCount++;
+                        WriteLine(string.Format("// Task{0} {1}{2}({3});",
                             returnType,
-                            SwaggerParser.FixTypeName(operationDef.OperationId),
+                            fixedTypeName,
                             methodNameAppend,
                             parameters));
+                    }
+                    else
+                    {
+                        ActionCount++;
+                        WriteLine(string.Format("Task{0} {1}{2}({3});",
+                            returnType,
+                            fixedTypeName,
+                            methodNameAppend,
+                            parameters));
+                    }
                 }
                 WriteLine("}");
             }
@@ -597,6 +785,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     .Where(i => i.ParameterIn == ParameterIn.FormData)
                     .ToList();
 
+            WriteLine("HttpResponseMessage response;");
+            WriteLine("HttpContent content;");
             var hasFormContent = formData.Any(notFilePredicate);
             if (hasFormContent)
             {
@@ -607,11 +797,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     {
                         WriteNullIfStatementOpening(formParam.Type.Name, formParam.Type.TypeName);
                     }
-                    WriteLine(
-                        string.Format(
-                            "formKeyValuePairs.Add(new KeyValuePair<string, string>(\"{0}\", {0}));",
-                            formParam.Type.Name));
-                    if (formParam.IsRequired == false && formParam.DefaultValue == null)
+                    WriteLine(string.Format("formKeyValuePairs.Add(new KeyValuePair<string, string>(\"{0}\", {0}));", formParam.Type.Name));
+                    if (formParam.IsRequired == false && formParam.DefaultValue == "null")
                     {
                         WriteLine("}");
                     }
@@ -634,12 +821,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                             formParam.Type.Name));
                 }
             }
-            WriteLine("HttpResponseMessage response;");
             if (hasFile)
             {
-                WriteLine(
-                    "using (var content = new MultipartFormDataContent(\"---------------------------\" + DateTime.Now.ToString()))");
-                WriteLine("{");
+                WriteLine("content = new MultipartFormDataContent(\"---------------------------\" + DateTime.Now.ToString()))");
                 WriteLine("content.Add(fileContent, \"file\");");
                 if (hasFormContent)
                 {
@@ -651,14 +835,10 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
             else
             {
-                WriteLine("var content = new FormUrlEncodedContent(formKeyValuePairs);");
+                WriteLine("content = new FormUrlEncodedContent(formKeyValuePairs);");
             }
 
             WriteLine(string.Format("response = await client.{0}Async(url, content).ConfigureAwait(false);", httpMethod));
-            if (hasFile)
-            {
-                WriteLine("}");
-            }
         }
 
         private static void WriteBaseProxyAndClasses(string proxyGeneratorNameSpace, string proxyGeneratorClassNamePrefix)
@@ -767,7 +947,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
             // request helpers
             WriteSimpleActionHelper("Get");
-            WriteSimpleActionHelper("Delete");
+            WriteCommandActionHelper("Delete");
             WriteCommandActionHelper("Put");
             WriteCommandActionHelper("Post");
 
@@ -804,7 +984,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("{");
             WriteLine("public HttpResponseMessage Response { get; set; }");
             WriteLine("public TimeSpan RequestDuration { get; set; }");
-            WriteLine("public Type ExpectedResponseType { get; set; }");
+            WriteLine("public System.Type ExpectedResponseType { get; set; }");
             WriteLine("public T Body { get; set; }");
             WriteLine("public Exception Exception { get; set; }");
             WriteLine("}");
@@ -812,14 +992,14 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("{");
             WriteLine("public HttpResponseMessage Response { get; set; }");
             WriteLine("public TimeSpan RequestDuration { get; set; }");
-            WriteLine("public Type ExpectedResponseType { get; set; }");
+            WriteLine("public System.Type ExpectedResponseType { get; set; }");
             WriteLine("public Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public interface IWebProxyResponse");
             WriteLine("{");
             WriteLine("HttpResponseMessage Response { get; set; }");
             WriteLine("TimeSpan RequestDuration { get; set; }");
-            WriteLine("Type ExpectedResponseType { get; set; }");
+            WriteLine("System.Type ExpectedResponseType { get; set; }");
             WriteLine("Exception Exception { get; set; }");
             WriteLine("}");
             WriteLine("public class BeforeRequestActionArgs");
@@ -856,6 +1036,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteResponseHelper(string action, bool hasBody = false)
         {
+            // TODO: Add header param support to base actionHelpers
+
             var bodyText = hasBody ? ", object body = null" : string.Empty;
             var defaultBody = action == "Put" || action == "Post"
                 ? ", new StringContent(string.Empty)"
@@ -882,7 +1064,21 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 WriteLine("}");
                 WriteLine("else");
                 WriteLine("{");
-                WriteLine($"response = await client.{action}AsJsonAsync(url, body).ConfigureAwait(false);");
+                if (action != "Delete")
+                {
+                    WriteLine($"response = await client.{action}AsJsonAsync(url, body).ConfigureAwait(false);");
+                }
+                else
+                {
+                    WriteLine("var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);");
+                    WriteLine("HttpRequestMessage request = new HttpRequestMessage");
+                    WriteLine("{");
+                    WriteLine("Content = new StringContent(json, System.Text.Encoding.UTF8, \"application/json\"),");
+                    WriteLine("Method = HttpMethod.Delete,");
+                    WriteLine("RequestUri = new Uri(url)");
+                    WriteLine("};");
+                    WriteLine("response = await client.SendAsync(request);");
+                }
                 WriteLine("}");
             }
             else
@@ -914,6 +1110,8 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteNoResponseHelper(string action, bool hasBody = false)
         {
+            // TODO: Add header param support to base actionHelpers
+
             var bodyText = hasBody ? ", object body = null" : string.Empty;
             var defaultBody = action == "Put" || action == "Post"
                 ? ", new StringContent(string.Empty)"
@@ -941,7 +1139,21 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 WriteLine("}");
                 WriteLine("else");
                 WriteLine("{");
-                WriteLine($"response = await client.{action}AsJsonAsync(url, body).ConfigureAwait(false);");
+                if (action != "Delete")
+                {
+                    WriteLine($"response = await client.{action}AsJsonAsync(url, body).ConfigureAwait(false);");
+                }
+                else
+                {
+                    WriteLine("var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);");
+                    WriteLine("HttpRequestMessage request = new HttpRequestMessage");
+                    WriteLine("{");
+                    WriteLine("Content = new StringContent(json, System.Text.Encoding.UTF8, \"application/json\"),");
+                    WriteLine("Method = HttpMethod.Delete,");
+                    WriteLine("RequestUri = new Uri(url)");
+                    WriteLine("};");
+                    WriteLine("response = await client.SendAsync(request);");
+                }
                 WriteLine("}");
             }
             else
@@ -1021,25 +1233,9 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteNullIfStatementOpening(string parameterName, string typeName)
         {
-            WriteLine(IsIntrinsicType(typeName)
+            WriteLine(SwaggerParser.IsIntrinsicType(typeName)
                 ? string.Format("if ({0}.HasValue){{", parameterName)
                 : string.Format("if ({0} != null){{", parameterName));
-        }
-
-        private static bool IsIntrinsicType(string typeName)
-        {
-            switch (typeName.ToLowerInvariant())
-            {
-                case "int":
-                case "long":
-                case "byte":
-                case "DateTime":
-                case "float":
-                case "double":
-                    return true;
-                default:
-                    return false;
-            }
         }
 
         private static readonly ConcurrentDictionary<int, string> PaddingCache = new ConcurrentDictionary<int, string>();
