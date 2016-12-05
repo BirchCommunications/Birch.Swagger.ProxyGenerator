@@ -39,7 +39,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
         public static SwaggerApiProxySettings GetSettings(string[] args)
         {
             // base directory is exe directory unless switch override
-            var baseDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)
+            var baseDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase)
                 ?.Replace(@"file:\", string.Empty);
 
             var settingsFile = string.Empty;
@@ -76,7 +76,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             if (string.IsNullOrWhiteSpace(settingsFile))
             {
                 Output.Write(
-                    "Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory"
+                    $"Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory \"{baseDirectory}\""
                     + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
                 Output.Write();
                 Output.Write("Exiting Proxy Generator.");
