@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using Birch.Swagger.ProxyGenerator.Generator;
 using Newtonsoft.Json.Linq;
 
 namespace Birch.Swagger.ProxyGenerator.Swagger
 {
     public class SwaggerParser
     {
-        public ProxyDefinition ParseSwaggerDoc(string document, bool parseOperationIdForProxyName)
+        public ProxyDefinition ParseSwaggerDoc(string document, SwaggerApiProxySettingsEndPoint endPoint, SwaggerApiProxySettings settings)
         {
             var jObject = JObject.Parse(document);
 
@@ -19,13 +19,13 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             var descriptionToken = infoToken["description"];
             proxyDefinition.Description = descriptionToken?.ToString();
 
-            ParsePaths(jObject, proxyDefinition, parseOperationIdForProxyName);
+            ParsePaths(jObject, proxyDefinition, endPoint, settings);
             ParseDefinitions(jObject, proxyDefinition);
 
             return proxyDefinition;
         }
 
-        private void ParsePaths(JObject jObject, ProxyDefinition proxyDefinition, bool parseOperationIdForProxyName)
+        private void ParsePaths(JObject jObject, ProxyDefinition proxyDefinition, SwaggerApiProxySettingsEndPoint endPoint, SwaggerApiProxySettings settings)
         {
             foreach (var pathToken in jObject["paths"].Cast<JProperty>())
             {
@@ -36,7 +36,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                     var method = operationToken.Name;
                     var operationId = operationToken.First["operationId"].ToString();
 
-                    if (parseOperationIdForProxyName)
+                    if (endPoint.ParseOperationIdForProxyName)
                     {
                         if (operationId.Contains("_"))
                         {
@@ -45,6 +45,9 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                             operationId = operationId.Substring(underscoreLocation + 1);
                         }
                     }
+
+                    // enusre first character is upper case to follow naming conventions.
+                    operationId = $"{char.ToUpper(operationId[0])}{operationId.Substring(1)}";
 
                     if (string.IsNullOrWhiteSpace(proxyName))
                     {
@@ -101,11 +104,20 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                             {
                                 parameterIn = ParameterIn.FormData;
                             }
+                            else if (prop["in"].ToString().Equals("header"))
+                            {
+                                // ignore headers defined in settings file
+                                if (settings.ExcludedHeaderParameters.Any(x => x.Equals(type.Name, StringComparison.InvariantCultureIgnoreCase))
+                                    || settings.EndPoints.Any(x => x.ExcludedHeaderParameters.Any(e => e.Equals(type.Name, StringComparison.InvariantCultureIgnoreCase))))
+                                {
+                                    continue;
+                                }
+                                parameterIn = ParameterIn.Header;
+                            }
                             else
                             {
                                 parameterIn = ParameterIn.Body;
                             }
-
 
                             var propDescriptionToken = prop["description"];
                             string propDescription = string.Empty;
@@ -144,17 +156,45 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                                 }
                             }
 
+                            if (propDefaultValue == "null" && !isRequired && !type.IsNullableType && IsIntrinsicType(type.TypeName))
+                            {
+                                type.IsNullableType = true;
+                                type.TypeName += "?";
+                            }
+
                             parameters.Add(new Parameter(type, parameterIn, isRequired, propDescription, collectionFormat, propDefaultValue));
                         }
                     }
+                    var isExcluded = endPoint.ExcludedOperationIds
+                             .Any(x => x.Equals(operationId, StringComparison.InvariantCultureIgnoreCase));
 
-                    proxyDefinition.Operations.Add(new Operation(returnType, method, path, parameters, operationId, description, proxyName));
+                    proxyDefinition.Operations.Add(new Operation(returnType, method, path, parameters, operationId, description, proxyName, isExcluded));
                 }
+            }
+        }
+
+        public static bool IsIntrinsicType(string typeName)
+        {
+            switch (typeName.ToLowerInvariant())
+            {
+                case "int":
+                case "boolean":
+                case "bool":
+                case "char":
+                case "long":
+                case "byte":
+                case "DateTime":
+                case "float":
+                case "double":
+                    return true;
+                default:
+                    return false;
             }
         }
 
         private void ParseDefinitions(JObject jObject, ProxyDefinition proxyDefinition)
         {
+            var skippedRefs = new List<string>();
             foreach (var definitionToken in jObject["definitions"].Where(i => i.Type == JTokenType.Property).Cast<JProperty>())
             {
                 bool addIt = true;
@@ -202,6 +242,8 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                     }
                     else
                     {
+                        // need to change to type of object for any refs that we do not add
+                        skippedRefs.Add(classDefinition.Name);
                         addIt = false;
                     }
                 }
@@ -216,6 +258,16 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 if (addIt)
                 {
                     proxyDefinition.ClassDefinitions.Add(classDefinition);
+                }
+            }
+
+            // update skipped refs
+            foreach (var classDefinition in proxyDefinition.ClassDefinitions)
+            {
+                var badProps = classDefinition.Properties.Where(x => skippedRefs.Contains(x.TypeName));
+                foreach (var typeDefinition in badProps)
+                {
+                    typeDefinition.TypeName = "object";
                 }
             }
         }
@@ -262,6 +314,13 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             }
 
             typeName = FixGenericName(typeName);
+
+            // check for reserved names
+            var reservedNames = new[] {"object", "virtual"};
+            if (reservedNames.Any(x => x == name.ToLower()))
+            {
+                name = $"@{name}";
+            }
             TypeDefinition type = new TypeDefinition(typeName, name, enumValues, isNullable);
             return type;
         }

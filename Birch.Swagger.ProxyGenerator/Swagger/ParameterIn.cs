@@ -5,6 +5,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
         Body,
         Path,
         Query,
-        FormData
+        FormData,
+        Header
     }
 }
