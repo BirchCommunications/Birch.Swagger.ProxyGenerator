@@ -42,7 +42,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             var baseDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase)
                 ?.Replace(@"file:\", string.Empty);
 
-            var settingsFile = string.Empty;
+            var settingsFile = "Birch.Swagger.ProxyGenerator.config.json";
 
             for (var i = 0; i < args.Length; i++)
             {
@@ -67,17 +67,15 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                 throw new ArgumentException("Could not determine base directory,");
             }
             Output.Debug($"Base Directory: {baseDirectory}");
-            var combine = Path.Combine(baseDirectory, "Birch.Swagger.ProxyGenerator.config.json");
-            if (string.IsNullOrWhiteSpace(settingsFile) && File.Exists(combine))
-            {
-                settingsFile = combine;
-            }
 
-            if (string.IsNullOrWhiteSpace(settingsFile))
+            // check for settings file
+            settingsFile = Path.IsPathRooted(settingsFile)
+                    ? settingsFile
+                    : Path.GetFullPath(Path.Combine(baseDirectory, settingsFile));
+            
+            if (!File.Exists(settingsFile))
             {
-                Output.Write(
-                    $"Could not locate Birch.Swagger.ProxyGenerator.config.json in application directory \"{baseDirectory}\""
-                    + " and no path to the Swagger.WebApiProxy.Generator config file provided.");
+                Output.Write($"Could not locate \"{settingsFile}\" in application directory \"{baseDirectory}\"");
                 Output.Write();
                 Output.Write("Exiting Proxy Generator.");
                 throw new Exception("No configuration file found.");

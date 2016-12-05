@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Birch.Swagger.ProxyGenerator.Generator;
-using Newtonsoft.Json;
 
 namespace Birch.Swagger.ProxyGenerator.Startup
 {
@@ -72,7 +70,7 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 
                 // start process
                 const string processName = "Birch.Swagger.ProxyGenerator.exe";
-                var arguments = string.Join(" ", args);
+                var arguments = string.Join(" ", args.Select(x => $"\"{x}\""));
                 Output.Debug($"Starting process \"{processName}\" with arguments \"{arguments}\".");
                 var process = new Process
                 {

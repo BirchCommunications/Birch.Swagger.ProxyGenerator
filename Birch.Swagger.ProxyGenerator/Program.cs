@@ -8,7 +8,6 @@ using Birch.Swagger.ProxyGenerator.Generator;
 
 using Microsoft.Owin;
 using Microsoft.Owin.Testing;
-using Newtonsoft.Json;
 
 namespace Birch.Swagger.ProxyGenerator
 {
