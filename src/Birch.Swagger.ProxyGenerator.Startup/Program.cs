@@ -70,7 +70,7 @@ namespace Birch.Swagger.ProxyGenerator.Startup
                 
                 // start process
                 const string processName = "Birch.Swagger.ProxyGenerator.exe";
-                var arguments = string.Join(" ", args.Select(x => $"\"{x}\""));
+                var arguments = string.Join(" ", args.Select(x => $"\"{x.Replace("\\", "\\\\")}\""));
                 Output.Debug($"Starting process \"{processName}\" with arguments \"{arguments}\".");
                 var process = new Process
                 {
