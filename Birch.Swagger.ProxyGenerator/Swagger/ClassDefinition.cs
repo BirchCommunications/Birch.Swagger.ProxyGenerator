@@ -6,8 +6,8 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
     {
         public ClassDefinition(string name)
         {
-            this.Name = name;
-            this.Properties = new List<TypeDefinition>();
+            Name = name;
+            Properties = new List<TypeDefinition>();
         }
 
         public string Name { get; set; }

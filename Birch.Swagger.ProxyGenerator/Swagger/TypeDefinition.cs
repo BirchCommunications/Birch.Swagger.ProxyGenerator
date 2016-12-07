@@ -6,10 +6,10 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
     {
         public TypeDefinition(string typeName, string name, string[] enumValues = null, bool isNullableType = false)
         {
-            this.TypeName = typeName;
-            this.Name = name;
-            this.EnumValues = enumValues;
-            this.IsNullableType = isNullableType;
+            TypeName = typeName;
+            Name = name;
+            EnumValues = enumValues;
+            IsNullableType = isNullableType;
         }
 
         public string Name { get; set; }
@@ -19,6 +19,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
 
         public string GetCleanTypeName()
         {
+            // remove dashes and upper next letter
             while (Name.Contains("-"))
             {
                 int index = Name.IndexOf("-", StringComparison.InvariantCulture);
@@ -27,6 +28,8 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 Name = Name.Insert(index, letter);
 
             }
+
+            // remove $
             return Name.Replace("$", "");
         }
     }

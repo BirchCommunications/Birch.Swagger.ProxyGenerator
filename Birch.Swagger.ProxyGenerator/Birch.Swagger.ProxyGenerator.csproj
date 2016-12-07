@@ -76,7 +76,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Swagger\ProxyDefinition.cs" />
     <Compile Include="Generator\ProxyGenerator.cs" />
-    <Compile Include="Generator\Settings.cs" />
     <Compile Include="Generator\SwaggerApiProxySettingsEndPoint.cs" />
     <Compile Include="Swagger\SwaggerParser.cs" />
     <Compile Include="Swagger\TypeDefinition.cs" />
