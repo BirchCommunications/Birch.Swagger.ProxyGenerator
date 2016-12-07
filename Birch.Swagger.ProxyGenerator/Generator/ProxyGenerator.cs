@@ -501,19 +501,20 @@ namespace Birch.Swagger.ProxyGenerator.Generator
                     x =>
                     {
                         var defaultType = GetDefaultType(x);
-
+                        var defaultValue = x.DefaultValue;
                         if (x.Type.EnumValues != null)
                         {
                             var className = SwaggerParser.FixTypeName(proxy) + "WebProxy";
                             defaultType = className + "." + defaultType;
-                            x.DefaultValue = defaultType + "." + x.DefaultValue;
+                            defaultValue = defaultType + "." + x.DefaultValue;
                         }
+
                         return (x.IsRequired == false)
                             ? string.Format(
                                 "{0} {1} = {2}",
                                 defaultType,
                                 x.Type.GetCleanTypeName(),
-                                x.DefaultValue)
+                                defaultValue)
                             : string.Format("{0} {1}", defaultType, x.Type.GetCleanTypeName());
                     }));
             return parameters;
@@ -821,13 +822,13 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             }
             if (hasFile)
             {
-                WriteLine("content = new MultipartFormDataContent(\"---------------------------\" + DateTime.Now.ToString()))");
-                WriteLine("content.Add(fileContent, \"file\");");
+                WriteLine("content = new MultipartFormDataContent(\"---------------------------\" + DateTime.Now.ToString());");
+                WriteLine("((MultipartFormDataContent)content).Add(fileContent, \"file\");");
                 if (hasFormContent)
                 {
                     WriteLine("using (var formUrlEncodedContent = new FormUrlEncodedContent(formKeyValuePairs))");
                     WriteLine("{");
-                    WriteLine("content.Add(formUrlEncodedContent);");
+                    WriteLine("((MultipartFormDataContent)content).Add(formUrlEncodedContent);");
                     WriteLine("}");
                 }
             }

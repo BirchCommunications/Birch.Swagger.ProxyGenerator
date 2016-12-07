@@ -321,6 +321,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             {
                 name = $"@{name}";
             }
+
             TypeDefinition type = new TypeDefinition(typeName, name, enumValues, isNullable);
             return type;
         }
@@ -352,7 +353,6 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
 
         private string GetTypeName(JToken token, out bool isNullable)
         {
-
             var refType = token["$ref"] as JValue;
             isNullable = false;
 
@@ -450,15 +450,8 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                 }
             }
 
-            if (type.Value.Equals("object"))
-            {
-                isNullable = false;
-                return "object";
-            }
-
-
             isNullable = false;
-            return "";
+            return "object";
         }
 
         public static string FixTypeName(string input)
@@ -475,6 +468,5 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
 
             return output;
         }
-
     }
 }
