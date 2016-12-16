@@ -239,6 +239,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             foreach (var swaggerDocDictionaryEntry in _swaggerDocDictionaryList.OrderBy(x => x.Key.Id))
             {
                 var endPoint = swaggerDocDictionaryEntry.Key;
+                
                 Output.Write($"Processing {endPoint.Url}");
                 WriteLine();
                 WriteLine(string.Format("// {0} Proxy", endPoint.Url));
@@ -522,9 +523,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
 
         private static void WriteUrl(Operation operationDef)
         {
-            WriteLine(operationDef.Path.StartsWith("/")
-                ? string.Format("var url = \"{0}\"", operationDef.Path.Substring(1))
-                : string.Format("var url = \"{0}\"", operationDef.Path));
+            WriteLine(string.Format("var url = \"{0}\"", operationDef.Path));
 
             foreach (var parameter in operationDef.Parameters.Where(i => i.ParameterIn == ParameterIn.Path))
             {

@@ -11,18 +11,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
         public ProxyDefinition ParseSwaggerDoc(string document, SwaggerApiProxySettingsEndPoint endPoint, SwaggerApiProxySettings settings)
         {
             var jObject = JObject.Parse(document);
-
-            var proxyDefinition = new ProxyDefinition();
-
-            var infoToken = jObject["info"];
-            proxyDefinition.Title = infoToken["title"].ToString();
-            var descriptionToken = infoToken["description"];
-            proxyDefinition.Description = descriptionToken?.ToString();
-
-            ParsePaths(jObject, proxyDefinition, endPoint, settings);
-            ParseDefinitions(jObject, proxyDefinition);
-
-            return proxyDefinition;
+            return ParseDefinitions(jObject, endPoint, settings);
         }
 
         private void ParsePaths(JObject jObject, ProxyDefinition proxyDefinition, SwaggerApiProxySettingsEndPoint endPoint, SwaggerApiProxySettings settings)
@@ -30,6 +19,18 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             foreach (var pathToken in jObject["paths"].Cast<JProperty>())
             {
                 var path = pathToken.Name;
+
+                // path should not start with /
+                path = path.StartsWith("/")
+                    ? path.Substring(1)
+                    : path;
+
+                // add base path if defined
+                if (!string.IsNullOrWhiteSpace(proxyDefinition.BasePath))
+                {
+                    path = $"{proxyDefinition.BasePath}{path}";
+                }
+
                 foreach (var operationToken in pathToken.First.Cast<JProperty>())
                 {
                     var proxyName = string.Empty;
@@ -192,8 +193,31 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             }
         }
 
-        private void ParseDefinitions(JObject jObject, ProxyDefinition proxyDefinition)
+        private ProxyDefinition ParseDefinitions(JObject jObject, SwaggerApiProxySettingsEndPoint endPoint, SwaggerApiProxySettings settings)
         {
+            var proxyDefinition = new ProxyDefinition();
+
+            // get info
+            var infoToken = jObject["info"];
+            proxyDefinition.Title = infoToken["title"].ToString();
+            proxyDefinition.Description = infoToken["description"]?.ToString();
+
+            // get base path
+            proxyDefinition.BasePath = jObject["basePath"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(proxyDefinition.BasePath))
+            {
+                // should neve start with /
+                proxyDefinition.BasePath = proxyDefinition.BasePath.StartsWith("/")
+                                        ? proxyDefinition.BasePath.Substring(1)
+                                        : proxyDefinition.BasePath;
+                // should always end with /
+                proxyDefinition.BasePath = !proxyDefinition.BasePath.EndsWith("/")
+                                        ? $"{proxyDefinition.BasePath}/"
+                                        : proxyDefinition.BasePath;
+            }
+
+            ParsePaths(jObject, proxyDefinition, endPoint, settings);
+
             var skippedRefs = new List<string>();
             foreach (var definitionToken in jObject["definitions"].Where(i => i.Type == JTokenType.Property).Cast<JProperty>())
             {
@@ -270,6 +294,8 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
                     typeDefinition.TypeName = "object";
                 }
             }
+
+            return proxyDefinition;
         }
 
         private TypeDefinition ParseType(JToken token)
@@ -316,7 +342,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
             typeName = FixGenericName(typeName);
 
             // check for reserved names
-            var reservedNames = new[] {"object", "virtual"};
+            var reservedNames = new[] { "object", "virtual" };
             if (reservedNames.Any(x => x == name.ToLower()))
             {
                 name = $"@{name}";
