@@ -13,7 +13,7 @@ namespace Birch.Swagger.ProxyGenerator.Swagger
         public string Title { get; set; }
         public string Version { get; set; }
         public string Description { get; set; }
-
+        public string BasePath { get; set; }
         public List<ClassDefinition> ClassDefinitions { get; set; }
         public List<Operation> Operations { get; set; }
     }
