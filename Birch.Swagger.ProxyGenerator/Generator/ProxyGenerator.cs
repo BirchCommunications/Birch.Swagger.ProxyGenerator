@@ -1090,7 +1090,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("RequestDuration = stopwatch.Elapsed,");
             WriteLine("ExpectedResponseType = typeof(T)");
             WriteLine("};");
-            WriteLine("await AfterRequestAsync(output);");
+            WriteLine("await AfterRequestAsync(output).ConfigureAwait(false);");
             WriteLine("if (output.Exception == null)");
             WriteLine("{");
             WriteLine("output.Body =");
@@ -1164,7 +1164,7 @@ namespace Birch.Swagger.ProxyGenerator.Generator
             WriteLine("Response = response,");
             WriteLine("RequestDuration = stopwatch.Elapsed");
             WriteLine("};");
-            WriteLine("await AfterRequestAsync(output);");
+            WriteLine("await AfterRequestAsync(output).ConfigureAwait(false);");
             WriteLine("");
             WriteLine("if (output.Exception != null)");
             WriteLine("{");
